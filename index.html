@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Miguel G. Doval · IA y juegos</title>
+<meta name="description" content="Vídeos sobre IA y automatización, y juegos hechos con IA.">
+<meta name="theme-color" content="#f5f1ea">
+<link rel="icon" href="juegos/rastro/icons/favicon-32.png" sizes="32x32">
+<meta property="og:title" content="Miguel G. Doval · IA y juegos">
+<meta property="og:description" content="Vídeos sobre IA y automatización, y juegos hechos con IA.">
+<meta property="og:image" content="https://miguelgdoval.github.io/juegos/rastro/icons/og.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f5f1ea;--paper:#fffdf9;--ink:#24211d;--muted:#7a7369;--line:#e4dccf;--red:#d65746;--blue:#3d72c6}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:40px 20px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:48px}
+  .me{font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:700;letter-spacing:-.3px}
+  .lang button{border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 9px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+  .lang button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  h1{font-family:Fraunces,Georgia,serif;font-size:clamp(34px,6vw,54px);line-height:1.05;letter-spacing:-1px;margin:0 0 16px}
+  .lead{font-size:18px;line-height:1.55;color:#4a453e;max-width:600px;margin:0 0 22px}
+  .links{display:flex;gap:10px;flex-wrap:wrap}
+  .pill{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:9px 15px;font-weight:500;font-size:15px}
+  .pill:hover{background:#f1ebe1}
+  .pill svg{width:18px;height:18px}
+  h2{font-family:Fraunces,Georgia,serif;font-size:28px;margin:64px 0 16px}
+  .game{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);background:var(--paper);border:1px solid var(--line);border-radius:20px;overflow:hidden;text-decoration:none;color:inherit;transition:transform .2s,box-shadow .2s}
+  .game:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,0,0,.07)}
+  .game img{width:100%;height:100%;object-fit:cover;display:block;background:#f5f1ea}
+  .game .txt{padding:22px 24px}
+  .game h3{font-family:Fraunces,Georgia,serif;font-size:30px;margin:0 0 2px}
+  .game .sub{color:var(--muted);font-size:14px;margin-bottom:12px}
+  .game p{line-height:1.55;margin:0 0 16px;font-size:15px}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}.tags span{font-size:12px;background:#efe9df;border-radius:999px;padding:4px 9px;color:#5c564d}
+  .play{display:inline-block;background:var(--ink);color:#fff;border-radius:10px;padding:10px 18px;font-weight:600}
+  .soon{margin-top:14px;border:1px dashed #d6cdbd;border-radius:16px;padding:16px 20px;color:var(--muted);font-size:14px}
+  @media (max-width:640px){.game{grid-template-columns:1fr}}
+  footer{margin-top:64px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="me">Miguel G. Doval</div><div class="lang"><button data-l="es">ES</button> <button data-l="en">EN</button></div></header>
+  <h1 data-t="h1"></h1>
+  <p class="lead" data-t="lead"></p>
+  <div class="links">
+    <a class="pill" href="https://www.youtube.com/@miguelgdoval" rel="noopener"><svg viewBox="0 0 24 24" fill="#e5322d"><path d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.8 15.1V8.9l5.4 3.1-5.4 3.1z"/></svg>YouTube</a>
+    <a class="pill" href="https://www.instagram.com/miguelgdoval" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="#c13584" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="#c13584"/></svg>Instagram</a>
+  </div>
+
+  <h2 id="juegos" data-t="games"></h2>
+  <a class="game" href="juegos/rastro/">
+    <img src="juegos/rastro/icons/og.png" alt="Rastro">
+    <div class="txt">
+      <h3>Rastro</h3><div class="sub" data-t="sub"></div>
+      <p data-t="desc"></p>
+      <div class="tags" data-t="tags"></div>
+      <span class="play" data-t="play"></span>
+    </div>
+  </a>
+  <div class="soon" data-t="soon"></div>
+  <footer data-t="foot"></footer>
+</div>
+<script>
+const T = {
+  es:{ h1:'IA, automatización y juegos hechos con IA', lead:'Hago vídeos sobre cómo usar la IA para trabajar menos y crear más. Aquí dejo lo que voy construyendo, empezando por los juegos.',
+    games:'Juegos', sub:'Trail · juego de mesa abstracto', desc:'Las fichas no son de nadie: mueves cualquiera, dejas tu huella y tienes que unir tus dos lados. Diseñado y equilibrado con bots que jugaron miles de partidas.',
+    tags:['Contra el bot o a dos', 'Tutorial y problemas', '5 temas', 'ES · EN · GL', 'Funciona sin conexión'], play:'Jugar ahora', soon:'Próximamente más juegos.', foot:'Hecho con IA, en Ferrol.' },
+  en:{ h1:'AI, automation and games made with AI', lead:'I make videos about using AI to work less and build more. This is where I put what I build, starting with games.',
+    games:'Games', sub:'Rastro · an abstract board game', desc:'Pieces belong to nobody: move any of them, leave your trail and connect your two sides. Designed and balanced with bots that played thousands of games.',
+    tags:['Vs bot or 2 players', 'Tutorial and puzzles', '5 themes', 'ES · EN · GL', 'Works offline'], play:'Play now', soon:'More games coming soon.', foot:'Made with AI, in Ferrol (Spain).' },
+};
+function set(l){
+  let saved = l; try{ if (!saved) saved = localStorage.getItem('rastro.lang'); }catch(e){}
+  saved = saved && saved.replace(/"/g, '');
+  const k = saved === 'en' ? 'en' : saved === 'es' || saved === 'gl' ? 'es' : ((navigator.language || 'en').toLowerCase().match(/^(es|gl|ca|eu)/) ? 'es' : 'en');
+  const d = T[k]; document.documentElement.lang = k;
+  document.querySelectorAll('[data-t]').forEach(e => { const v = d[e.dataset.t]; e.innerHTML = Array.isArray(v) ? v.map(x => `<span>${x}</span>`).join('') : v; });
+  document.querySelector('.game .sub').textContent = d.sub;
+  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.l === k));
+  if (l) try{ localStorage.setItem('rastro.lang', JSON.stringify(l)); }catch(e){}
+}
+document.querySelectorAll('.lang button').forEach(b => b.onclick = () => set(b.dataset.l));
+set();
+</script>
+</body>
+</html>

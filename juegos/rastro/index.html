@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rastro · Trail</title>
+<meta name="description" content="Rastro (Trail): un juego de mesa abstracto. Mueve cualquier ficha, deja tu huella y conecta tus dos lados.">
+<meta name="theme-color" content="#f5f1ea">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rastro">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Rastro · Trail">
+<meta property="og:description" content="Un juego de mesa abstracto: fichas sin dueño. Mueve cualquier ficha, deja tu huella y conecta tus dos lados.">
+<meta property="og:image" content="https://miguelgdoval.github.io/juegos/rastro/icons/og.png">
+<meta property="og:url" content="https://miguelgdoval.github.io/juegos/rastro/">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f1ea; --paper:#fffdf9; --ink:#24211d; --muted:#7a7369; --line:#e4dccf;
+    --cell:#ebe4d8; --cell-hi:#f3ede3; --cell-stroke:#d3c9b8;
+    --red:#d65746; --red-soft:#f1b2a7; --red-ink:#a83a2c;
+    --blue:#3d72c6; --blue-soft:#afc7ee; --blue-ink:#2a5297;
+    --accent:#e2a72e; --rock:#857e73;
+    --ease:cubic-bezier(.22,.8,.3,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+  button,select{font:inherit}
+  .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 40px}
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+  .brand h1{font-family:Fraunces,Georgia,serif;font-size:30px;margin:0;letter-spacing:-.5px}
+  .brand span{color:var(--muted);font-size:13px}
+  nav{display:flex;background:var(--nav);border-radius:999px;padding:3px}
+  nav button{border:0;background:transparent;padding:7px 14px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;transition:background .2s,color .2s}
+  nav button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .iconbtn{border:1px solid var(--line);background:var(--paper);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+  .iconbtn svg{width:18px;height:18px}
+  #langSeg button{padding:4px 8px;font-size:12px}
+  @media (max-width:600px){
+    .wrap{padding:12px 10px 30px}
+    header{gap:8px;margin-bottom:10px}
+    .brand span{display:none}
+    .brand h1{font-size:26px}
+    nav{order:3;width:100%}
+    nav button{flex:1;padding:8px 6px}
+    #soundBtn{order:2;width:34px;height:34px}
+    .stage{padding:10px 6px 8px;border-radius:14px}
+    #status{font-size:15px}
+    .field{grid-template-columns:90px 1fr}
+  }
+  main{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;align-items:start}
+  @media (max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
+  .stage{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:14px 14px 10px;position:relative}
+  #status{display:flex;align-items:center;gap:10px;min-height:30px;font-weight:600;font-size:16px;padding:2px 4px 8px}
+  .dot{width:14px;height:14px;border-radius:50%;flex:none;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15)}
+  .thinking{display:inline-flex;gap:3px;margin-left:2px}
+  .thinking i{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+  .thinking i:nth-child(2){animation-delay:.15s}.thinking i:nth-child(3){animation-delay:.3s}
+  @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+  svg#board{width:100%;height:auto;display:block;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px 4px 2px}
+  .btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:8px 14px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s}
+  .btn:hover{background:#f4efe6}.btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn.primary:hover{background:#3a362f}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .muted{color:var(--muted);font-size:13px}
+  aside .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+  aside h2{font-family:Fraunces,Georgia,serif;font-size:19px;margin:0 0 10px}
+  aside h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+  .field{display:grid;grid-template-columns:110px 1fr;align-items:center;gap:8px;margin-bottom:8px;font-size:14px}
+  .seg{display:flex;flex-wrap:wrap;gap:4px}
+  .seg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:13px;cursor:pointer;color:var(--ink)}
+  .seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .rules{font-size:14px;line-height:1.55}
+  .rules ol{padding-left:18px;margin:6px 0 10px}.rules li{margin-bottom:6px}
+  .score{display:flex;gap:14px;font-size:13px;color:var(--muted);margin-top:6px}
+  .pgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0}
+  .pgrid button{aspect-ratio:1;border:1px solid var(--line);border-radius:10px;background:#fff;cursor:pointer;font-weight:600;font-size:13px;color:var(--ink);position:relative}
+  .pgrid button.on{outline:2px solid var(--ink)}
+  .pgrid button.done{background:#e8f2e4;border-color:#b9d6ae;color:#3d6a2f}
+  .msg{border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.45;margin:10px 0;background:#f4efe6}
+  .msg.ok{background:#e8f2e4;color:#2f5a23}.msg.bad{background:#fbe9e5;color:#8a3022}
+  .steps{display:flex;gap:5px;margin:4px 0 12px}.steps i{height:4px;flex:1;border-radius:4px;background:var(--line)}.steps i.on{background:var(--ink)}
+  .replaybar{display:flex;align-items:center;gap:6px;width:100%}
+  .replaybar input{flex:1}
+  .banner{display:none;text-align:center;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:8px 4px 4px;background:#faf6ef}
+  .banner.show{display:block;animation:bannerin .35s var(--ease)}
+  @keyframes bannerin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .banner b{font-family:Fraunces,Georgia,serif;font-size:21px;display:block;margin-bottom:2px}
+  .banner .row{display:flex;gap:8px;justify-content:center;margin-top:10px}
+
+  /* --- tablero --- */
+  .cell .base{fill:var(--cell);stroke:var(--cell-stroke);stroke-width:.45;transition:fill .38s var(--ease)}
+  .cell.v1 .base{fill:var(--red-soft)} .cell.v2 .base{fill:var(--blue-soft)}
+  .cell.v3 .base{fill:var(--red)} .cell.v4 .base{fill:var(--blue)}
+  .cell.rock .base{fill:var(--rock);stroke:#6d675e}
+  .cell .seal{fill:none;stroke:#fff;stroke-width:.7;opacity:0;stroke-dasharray:40;stroke-dashoffset:40;transition:opacity .2s,stroke-dashoffset .6s var(--ease)}
+  .cell.v3 .seal,.cell.v4 .seal{opacity:.85;stroke-dashoffset:0}
+  .cell .deco{pointer-events:none;transition:opacity .4s}
+  .cell.v1 .deco,.cell.v2 .deco,.cell.v3 .deco,.cell.v4 .deco{opacity:.25}
+  [data-theme=nieve] .cell.v1 .paw,[data-theme=nieve] .cell.v2 .paw{opacity:.75!important}
+  [data-theme=nieve] .cell.v3 .paw,[data-theme=nieve] .cell.v4 .paw{opacity:.4!important}
+  [data-theme=colmena] .cell .base{stroke-width:.9}
+  [data-theme=tinta] .cell.v3 .seal,[data-theme=tinta] .cell.v4 .seal{stroke-dasharray:2 1.2!important;stroke-dashoffset:0}
+  .cell .anchor{fill:none;stroke:#8f8577;stroke-width:.6;opacity:.8}
+  .cell.v1 .anchor,.cell.v2 .anchor{stroke:#fff}
+  .cell.target{cursor:pointer}
+  .cell.target:hover .base{filter:brightness(1.04)}
+  .piece{cursor:pointer}
+  .piece .body{transition:transform .18s var(--ease)}
+  .piece.sel .body{transform:scale(1.12)}
+  .piece.dim{opacity:.5}
+  .piece .lock{fill:none;stroke:var(--ink);stroke-width:.55;stroke-dasharray:1.3 1.1;opacity:.75;transform-box:fill-box;transform-origin:center;animation:spin 9s linear infinite}
+  .piece.hint .body{animation:hintpulse 1s ease-in-out infinite}
+  @keyframes hintpulse{50%{transform:scale(1.2)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .destdot{fill:var(--ink);opacity:0;pointer-events:none;animation:fadein .25s var(--ease) forwards}
+  @keyframes fadein{to{opacity:.38}}
+  .ghostline{stroke-width:.8;stroke-linecap:round;stroke-dasharray:1.2 1.4;pointer-events:none;opacity:.8}
+  .ghostpaint{pointer-events:none;opacity:.55}
+  .lastline{stroke:var(--accent);stroke-width:.7;stroke-dasharray:1.4 1.2;fill:none;opacity:.85;pointer-events:none}
+  .winline{fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;opacity:.9}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>Rastro</h1><span></span></div>
+    <div class="seg" id="langSeg" aria-label="Idioma / Language"><button data-v="es">ES</button><button data-v="en">EN</button><button data-v="gl">GL</button></div>
+    <nav id="tabs">
+      <button data-tab="play" class="on">Jugar</button>
+      <button data-tab="puzzles">Problemas</button>
+      <button data-tab="tutorial">Tutorial</button>
+      <button data-tab="rules">Reglas</button>
+    </nav>
+    <button class="iconbtn" id="soundBtn" title="Sonido" aria-label="Sonido"></button>
+  </header>
+  <main>
+    <section class="stage">
+      <div id="status"></div>
+      <svg id="board" viewBox="0 0 100 100" aria-label="Tablero"></svg>
+      <div class="banner" id="banner"></div>
+      <div class="bar" id="bar"></div>
+    </section>
+    <aside id="side"></aside>
+  </main>
+</div>
+
+<script id="engine">
+// Rastro — motor v2. Funciona igual en el navegador, en un Web Worker y en Node.
+(function (root) {
+  const DIRS = [[0, 1], [0, -1], [1, 0], [-1, 0], [-1, 1], [1, -1]];
+  // Tipos de casilla
+  const T = { NORMAL: 0, HOLE: 1, ROCK: 2, SEAL: 3 };
+  // Marcas: 0 vacía · 1 rojo · 2 azul · 3 rojo sellado · 4 azul sellado
+  const COL = v => (v > 2 ? v - 2 : v);
+  const NPIECES = 4;
+
+  function rng(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a |= 0; a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  // Órbita de una casilla bajo las simetrías que mantienen el juego justo:
+  // trasponer (cambia Rojo por Azul) y girar 180°.
+  function orbit(N, r, c) {
+    const pts = [[r, c], [c, r], [N - 1 - r, N - 1 - c], [N - 1 - c, N - 1 - r]];
+    const seen = new Set(), out = [];
+    for (const [a, b] of pts) { const k = a * N + b; if (!seen.has(k)) { seen.add(k); out.push(k); } }
+    return out;
+  }
+
+  function startCells(N) {
+    const m = (N - 1) >> 1;
+    return [[m - 1, m - 1], [m + 1, m + 1], [m - 1, m + 1], [m + 1, m - 1]].map(([r, c]) => r * N + c);
+  }
+
+  // Construye el tablero: forma + casillas especiales
+  function makeBoard(opts) {
+    const N = opts.N || 7, NN = N * N, m = (N - 1) >> 1;
+    const types = new Int8Array(NN);
+    const shape = opts.shape || 'clasico';
+    const hole = (r, c) => orbit(N, r, c).forEach(k => (types[k] = T.HOLE));
+    if (shape === 'lago') { hole(m, m); hole(m - 1, m); }
+    if (shape === 'islas') { hole(m - 2, m); if (N >= 9) hole(m - 3, m + 3); }
+    if (shape === 'recortado') { hole(0, 0); hole(0, 1); if (N >= 9) { hole(0, 2); hole(1, 1); } }
+    const starts = startCells(N);
+    if (opts.specials) {
+      const rand = rng(opts.seed || 1);
+      const free = () => {
+        for (let tries = 0; tries < 500; tries++) {
+          const r = Math.floor(rand() * N), c = Math.floor(rand() * N);
+          const o = orbit(N, r, c);
+          // ni en los bordes ni pegadas a las fichas de salida: que no decidan la partida solas
+          if (o.some(k => types[k] !== T.NORMAL || starts.includes(k))) continue;
+          if (o.some(k => { const a = (k / N) | 0, b = k % N; return a === 0 || b === 0 || a === N - 1 || b === N - 1; })) continue;
+          return o;
+        }
+        return [];
+      };
+      const rocks = opts.rocks != null ? opts.rocks : 1, seals = opts.seals != null ? opts.seals : 1;
+      for (let i = 0; i < rocks; i++) free().forEach(k => (types[k] = T.ROCK));
+      for (let i = 0; i < seals; i++) free().forEach(k => (types[k] = T.SEAL));
+    }
+    const blocked = k => types[k] === T.HOLE || types[k] === T.ROCK;
+    const nb = [], rays = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+      const k = r * N + c; nb[k] = []; rays[k] = [];
+      for (const [dr, dc] of DIRS) {
+        const a = r + dr, b = c + dc;
+        if (a >= 0 && a < N && b >= 0 && b < N && !blocked(a * N + b)) nb[k].push(a * N + b);
+        const ray = []; let x = r + dr, y = c + dc;
+        while (x >= 0 && x < N && y >= 0 && y < N && !blocked(x * N + y)) { ray.push(x * N + y); x += dr; y += dc; }
+        rays[k].push(ray);
+      }
+    }
+    return { N, NN, types, nb, rays, blocked, starts, shape, specials: !!opts.specials, opening: opts.opening || 'fija', starter: opts.starter || 1 };
+  }
+
+  function newState(B) {
+    const s = { m: new Int8Array(B.NN), p: new Array(NPIECES).fill(-1), locked: -1, turn: 1, over: false, winner: 0, n: 0, toPlace: 0 };
+    s.turn = B.starter;
+    if (B.opening === 'colocacion') s.toPlace = NPIECES;
+    else s.p = B.starts.slice();
+    return s;
+  }
+  const clone = s => ({ m: s.m.slice(), p: s.p.slice(), locked: s.locked, turn: s.turn, over: s.over, winner: s.winner, n: s.n, toPlace: s.toPlace });
+
+  const paintable = (B, s, k) => !B.blocked(k) && (s.m[k] === 0 || s.m[k] === 3 - s.turn);
+
+  // Tipos de jugada: P colocar · S deslizar · R retirar · F pintar casilla libre
+  function legal(B, s) {
+    const out = [];
+    if (s.over) return out;
+    const occ = new Set(s.p.filter(x => x >= 0));
+    if (s.toPlace > 0) {
+      const i = NPIECES - s.toPlace;
+      for (let k = 0; k < B.NN; k++) if (!B.blocked(k) && !occ.has(k)) out.push({ t: 'P', i, to: k });
+      return out;
+    }
+    s.p.forEach((pos, i) => {
+      if (pos < 0 || i === s.locked || !paintable(B, s, pos)) return;
+      for (const ray of B.rays[pos]) for (const k of ray) {
+        if (occ.has(k)) break;
+        if (paintable(B, s, k)) out.push({ t: 'S', i, from: pos, to: k });
+      }
+    });
+    if (out.length) return out;
+    s.p.forEach((pos, i) => { if (pos >= 0) out.push({ t: 'R', i, from: pos }); });
+    if (out.length) return out;
+    for (let k = 0; k < B.NN; k++) if (!B.blocked(k) && s.m[k] === 0) out.push({ t: 'F', to: k });
+    return out;
+  }
+
+  function paintCell(B, s, k, pl) {
+    if (!paintable(B, s, k)) return 0;
+    const sealed = s.m[k] === 3 - pl || B.types[k] === T.SEAL;
+    s.m[k] = sealed ? pl + 2 : pl;
+    return sealed ? 2 : 1; // 2 = quedó sellada
+  }
+
+  function connected(B, s, pl) {
+    const N = B.N, seen = new Uint8Array(B.NN), st = [];
+    for (let i = 0; i < N; i++) { const k = pl === 1 ? i : i * N; if (COL(s.m[k]) === pl) { seen[k] = 1; st.push(k); } }
+    while (st.length) {
+      const k = st.pop(), r = (k / N) | 0, c = k % N;
+      if (pl === 1 ? r === N - 1 : c === N - 1) return true;
+      for (const x of B.nb[k]) if (!seen[x] && COL(s.m[x]) === pl) { seen[x] = 1; st.push(x); }
+    }
+    return false;
+  }
+
+  // Cadena ganadora (la más corta) para resaltarla
+  function winPath(B, s, pl) {
+    const N = B.N, prev = new Int32Array(B.NN).fill(-2), q = [];
+    for (let i = 0; i < N; i++) { const k = pl === 1 ? i : i * N; if (COL(s.m[k]) === pl) { prev[k] = -1; q.push(k); } }
+    for (let h = 0; h < q.length; h++) {
+      const k = q[h], r = (k / N) | 0, c = k % N;
+      if (pl === 1 ? r === N - 1 : c === N - 1) { const path = []; let x = k; while (x !== -1) { path.push(x); x = prev[x]; } return path.reverse(); }
+      for (const x of B.nb[k]) if (prev[x] === -2 && COL(s.m[x]) === pl) { prev[x] = k; q.push(x); }
+    }
+    return [];
+  }
+
+  function apply(B, s, mv) {
+    const t = clone(s), pl = t.turn;
+    t.n++; t.info = null;
+    if (mv.t === 'P') {
+      t.p[mv.i] = mv.to; t.toPlace--; t.locked = mv.i;
+      // Se coloca por turnos (quien empieza coloca la 1ª y la 3ª). Al acabar, mueve quien empezó
+      // y ninguna ficha está bloqueada.
+      if (t.toPlace === 0) t.locked = -1;
+      t.turn = 3 - pl; return t;
+    }
+    else if (mv.t === 'S') {
+      const r = paintCell(B, t, mv.from, pl);
+      t.p[mv.i] = mv.to; t.locked = mv.i; t.info = { painted: mv.from, sealed: r === 2 };
+    }
+    else if (mv.t === 'R') { const r = paintCell(B, t, mv.from, pl); t.p[mv.i] = -1; t.locked = -1; t.info = { painted: r ? mv.from : -1, sealed: r === 2 }; }
+    else if (mv.t === 'F') { const r = paintCell(B, t, mv.to, pl); t.locked = -1; t.info = { painted: mv.to, sealed: r === 2 }; }
+    if (mv.t !== 'P' && connected(B, t, pl)) { t.over = true; t.winner = pl; return t; }
+    t.turn = 3 - pl;
+    // Caso raro (formas con agujeros o rocas): no queda nada que hacer y nadie conecta.
+    if (t.p.every(x => x < 0)) {
+      let empty = false;
+      for (let k = 0; k < B.NN; k++) if (!B.blocked(k) && t.m[k] === 0) { empty = true; break; }
+      if (!empty) {
+        const cnt = [0, 0, 0], sea = [0, 0, 0];
+        for (let k = 0; k < B.NN; k++) { const v = t.m[k]; if (v) { cnt[COL(v)]++; if (v > 2) sea[COL(v)]++; } }
+        t.over = true; t.endByCount = true;
+        t.winner = cnt[1] !== cnt[2] ? (cnt[1] > cnt[2] ? 1 : 2) : sea[1] !== sea[2] ? (sea[1] > sea[2] ? 1 : 2) : 0;
+      }
+    }
+    return t;
+  }
+
+  // ---------- Evaluación y bots ----------
+  function dist(B, s, pl) {
+    const N = B.N, NN = B.NN, INF = 999;
+    const d = new Int16Array(NN).fill(INF), dq = new Int32Array(NN * 6);
+    let h = NN * 3, tl = NN * 3;
+    const cost = k => {
+      if (B.blocked(k)) return INF;
+      const v = s.m[k];
+      if (COL(v) === pl) return 0;
+      if (v === 0) return 1;
+      if (v === 3 - pl) return 2; // del rival pero recuperable
+      return INF;               // sellada del rival
+    };
+    const push = (k, w, nd) => { d[k] = nd; if (w === 0) dq[--h] = k; else dq[tl++] = k; };
+    for (let i = 0; i < N; i++) { const k = pl === 1 ? i : i * N; const w = cost(k); if (w < INF && w < d[k]) push(k, w, w); }
+    // Dijkstra sencillo con pesos 0/1/2 (cola doble + reinserción)
+    while (h < tl) {
+      const k = dq[h++];
+      for (const x of B.nb[k]) { const w = cost(x); if (w >= INF) continue; const nd = d[k] + w; if (nd < d[x]) push(x, w, nd); }
+    }
+    let best = INF;
+    for (let i = 0; i < N; i++) { const k = pl === 1 ? (N - 1) * N + i : i * N + N - 1; if (d[k] < best) best = d[k]; }
+    return best;
+  }
+  function evalFor(B, s, pl) {
+    if (s.over) return s.winner === pl ? 1000 : -1000;
+    const W = API.W;
+    let v = dist(B, s, 3 - pl) * W.opp - dist(B, s, pl) * W.me;
+    if (W.seal) { let d = 0; for (let k = 0; k < B.NN; k++) { const x = s.m[k]; if (x > 2) d += COL(x) === pl ? 1 : -1; } v += W.seal * d; }
+    return v;
+  }
+
+  function topMoves(B, s, k, pl) {
+    const arr = [];
+    for (const mv of legal(B, s)) { const t = apply(B, s, mv); arr.push([evalFor(B, t, pl), mv, t]); }
+    arr.sort((a, b) => b[0] - a[0]);
+    return k ? arr.slice(0, k) : arr;
+  }
+  function value(B, s, depth, beams, root) {
+    if (s.over) return s.winner === root ? 1000 + depth : -1000 - depth;
+    if (depth === 0) return evalFor(B, s, root);
+    const mover = s.turn, cands = topMoves(B, s, beams[0], mover);
+    let best = mover === root ? -1e9 : 1e9;
+    for (const [, , t] of cands) {
+      const v = value(B, t, depth - 1, beams.slice(1), root);
+      if (mover === root ? v > best : v < best) best = v;
+      if (mover !== root && best <= -1000) break;
+      if (mover === root && best >= 1000) break;
+    }
+    return best;
+  }
+
+  const LEVELS = {
+    1: { name: 'Fácil', depth: 1, beams: [0], noise: 1.6 },
+    2: { name: 'Medio', depth: 3, beams: [6, 4, 2], noise: 1.2 },
+    3: { name: 'Difícil', depth: 3, beams: [12, 8, 4], noise: 0.3 },
+    4: { name: 'Experto', depth: 4, beams: [14, 10, 6, 4], noise: 0.1 },
+  };
+
+  // Colocación inicial: se valora cada casilla con partidas rápidas simuladas
+  function choosePlacement(B, s, level, rand) {
+    rand = rand || Math.random;
+    const me = s.turn, all = legal(B, s);
+    const N = B.N, m = (N - 1) / 2;
+    const centrality = mv => { const r = (mv.to / N) | 0, c = mv.to % N; return -(Math.abs(r - m) + Math.abs(c - m) + Math.abs(r + c - 2 * m)) / 2; };
+    if (level <= 1) { all.sort((a, b) => centrality(b) + rand() * 3 - centrality(a)); return all[0]; }
+    const cands = all.slice().sort((a, b) => centrality(b) - centrality(a)).slice(0, level >= 3 ? 18 : 10);
+    const rollouts = level >= 4 ? 4 : level >= 3 ? 3 : 2;
+    let best = cands[0], bv = -1e9;
+    for (const mv of cands) {
+      let tot = 0;
+      for (let k = 0; k < rollouts; k++) {
+        let t = apply(B, s, mv);
+        for (let ply = 0; ply < 10 && !t.over; ply++) {
+          const L = legal(B, t);
+          let pick;
+          if (t.toPlace > 0) pick = L[Math.floor(rand() * L.length)];
+          else { let bs = -1e9; for (const x of L) { const u = apply(B, t, x); const v = evalFor(B, u, t.turn) + rand() * 1.2; if (v > bs) { bs = v; pick = x; } } }
+          t = apply(B, t, pick);
+        }
+        tot += evalFor(B, t, me);
+      }
+      const v = tot / rollouts + rand() * 0.2;
+      if (v > bv) { bv = v; best = mv; }
+    }
+    return best;
+  }
+
+  function chooseMove(B, s, level, rand) {
+    rand = rand || Math.random;
+    if (s.toPlace > 0) return choosePlacement(B, s, level, rand);
+    const L = LEVELS[level] || LEVELS[3], me = s.turn;
+    const cands = topMoves(B, s, L.beams[0], me);
+    for (const [, mv, t] of cands) if (t.over && t.winner === me) return mv;
+    if (L.depth === 1) { let best, bs = -1e9; for (const [v, mv] of cands) { const x = v + rand() * L.noise; if (x > bs) { bs = x; best = mv; } } return best; }
+    let best = cands[0] && cands[0][1], bs = -1e9;
+    for (const [, mv, t] of cands) {
+      const v = value(B, t, L.depth - 1, L.beams.slice(1), me) + rand() * L.noise;
+      if (v > bs) { bs = v; best = mv; }
+    }
+    return best;
+  }
+
+  // ---------- Problemas ----------
+  // ¿Gana el bando que mueve en 2 jugadas suyas, haga lo que haga el rival?
+  function winsNow(B, s) { return legal(B, s).filter(mv => { const t = apply(B, s, mv); return t.over && t.winner === s.turn; }); }
+  function forcedWin2(B, s) {
+    const me = s.turn, sols = [];
+    if (winsNow(B, s).length) return null; // ya gana en 1: no es problema de 2
+    for (const mv of legal(B, s)) {
+      const t = apply(B, s, mv);
+      if (t.over) continue;
+      const replies = legal(B, t);
+      if (!replies.length) continue;
+      let ok = true;
+      for (const om of replies) { const u = apply(B, t, om); if (u.over || !winsNow(B, u).length) { ok = false; break; } }
+      if (ok) sols.push(mv);
+    }
+    return sols;
+  }
+
+  const toJSON = s => ({ m: Array.from(s.m), p: s.p.slice(), locked: s.locked, turn: s.turn, over: s.over, winner: s.winner, n: s.n, toPlace: s.toPlace });
+  const fromJSON = j => ({ m: Int8Array.from(j.m), p: j.p.slice(), locked: j.locked, turn: j.turn, over: !!j.over, winner: j.winner || 0, n: j.n || 0, toPlace: j.toPlace || 0 });
+  // Respuesta más dura en un problema: la que deja menos jugadas ganadoras
+  function bestDefense(B, s, rand) {
+    rand = rand || Math.random; let best = null, bc = 1e9;
+    for (const mv of legal(B, s)) { const t = apply(B, s, mv); if (t.over) return mv; const c = winsNow(B, t).length + rand() * 0.5; if (c < bc) { bc = c; best = mv; } }
+    return best;
+  }
+
+  const API = { toJSON, fromJSON, bestDefense, W: { me: 1.05, opp: 1, seal: 2.5 }, T, COL, NPIECES, DIRS, rng, orbit, makeBoard, newState, clone, legal, apply, paintable, connected, winPath, dist, evalFor, chooseMove, LEVELS, winsNow, forcedWin2 };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Rastro = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+const PUZZLES = [{"m":[0,1,0,0,0,0,3,0,0,0,0,0,0,0,0,4,3,3,4,0,0,0,3,3,3,4,0,1,3,3,4,4,4,0,0,4,2,0,0,2,0,0,4,4,4,3,0,0,3],"p":[39,3,34,37],"locked":1,"turn":2,"sol":{"i":2,"to":33},"steal":false},{"m":[0,0,0,0,0,0,0,0,0,0,2,1,0,3,0,0,4,0,3,3,3,0,0,0,1,0,1,0,0,0,4,2,4,3,4,2,0,4,0,3,3,2,0,0,0,1,0,0,0],"p":[17,11,31,48],"locked":0,"turn":1,"sol":{"i":3,"to":6},"steal":false},{"m":[0,3,0,3,3,4,0,0,0,3,4,3,0,0,0,0,0,0,4,0,0,3,4,2,4,1,4,0,1,4,4,4,3,3,3,0,3,4,0,0,4,0,4,3,4,2,4,0,0],"p":[28,23,8,35],"locked":1,"turn":2,"sol":{"i":3,"to":41},"steal":false},{"m":[0,0,0,0,3,1,0,0,0,4,3,4,0,4,0,3,4,3,3,0,3,0,0,4,4,3,1,0,0,4,3,0,3,0,0,3,2,0,2,0,0,0,0,4,4,0,0,0,0],"p":[45,39,38,33],"locked":0,"turn":1,"sol":{"i":1,"to":46},"steal":false},{"m":[1,0,4,4,0,2,0,0,0,3,0,0,3,3,4,0,4,4,0,0,3,0,3,3,3,3,2,0,3,4,4,3,3,0,0,3,4,3,0,0,0,0,3,0,0,0,0,0,0],"p":[0,21,27,26],"locked":0,"turn":1,"sol":{"i":3,"to":5},"steal":true},{"m":[0,0,0,3,0,4,3,0,0,0,0,0,2,4,0,0,0,0,0,3,0,4,0,0,4,3,3,4,0,0,3,3,0,3,0,3,0,4,4,3,3,0,4,0,0,0,0,0,0],"p":[47,44,41,18],"locked":3,"turn":1,"sol":{"i":0,"to":12},"steal":false},{"m":[0,0,0,0,0,1,0,0,0,2,3,3,3,0,0,0,3,4,3,0,0,0,2,3,1,2,4,3,0,1,4,0,0,0,0,4,2,0,4,0,0,0,4,0,4,0,0,0,0],"p":[36,24,31,21],"locked":2,"turn":1,"sol":{"i":0,"to":43},"steal":true},{"m":[0,4,0,4,0,4,3,0,0,0,0,1,4,4,3,3,4,3,4,3,4,0,0,0,0,0,0,0,0,0,4,0,3,0,0,4,1,0,0,0,0,0,2,0,0,0,0,0,0],"p":[42,34,36,10],"locked":3,"turn":2,"sol":{"i":2,"to":24},"steal":true},{"m":[0,1,0,1,0,4,0,0,0,0,0,0,0,0,3,4,4,3,3,3,0,3,0,4,4,0,4,2,0,0,3,3,4,4,0,3,4,4,4,0,3,0,0,4,0,4,0,0,0],"p":[9,41,25,48],"locked":1,"turn":2,"sol":{"i":3,"to":42},"steal":false},{"m":[0,0,0,0,0,0,0,0,1,1,0,0,3,4,0,0,3,0,0,2,0,0,3,0,3,0,4,3,4,3,3,3,0,0,0,4,2,4,0,2,0,0,4,3,0,0,0,0,0],"p":[44,36,14,38],"locked":2,"turn":1,"sol":{"i":1,"to":1},"steal":true},{"m":[0,0,0,0,0,0,1,2,3,3,0,3,3,1,1,4,3,3,4,4,0,0,0,0,4,4,3,0,0,0,4,0,0,0,0,2,4,0,4,0,2,0,0,0,0,0,0,0,0],"p":[14,46,7,45],"locked":2,"turn":2,"sol":{"i":0,"to":20},"steal":true},{"m":[1,0,0,0,0,3,4,0,0,0,0,0,0,4,0,0,4,0,3,4,0,0,0,0,2,4,4,0,3,0,4,4,3,0,0,1,0,4,0,0,0,0,0,4,0,0,0,0,0],"p":[47,40,36,42],"locked":3,"turn":2,"sol":{"i":2,"to":35},"steal":false},{"m":[0,0,0,4,0,4,4,0,0,0,4,0,4,0,0,0,0,1,3,3,0,2,2,4,4,0,3,3,0,0,3,3,3,4,0,0,0,0,0,0,0,0,0,0,4,1,0,0,0],"p":[13,39,4,20],"locked":1,"turn":2,"sol":{"i":2,"to":16},"steal":false},{"m":[0,4,0,0,0,4,1,0,0,0,3,4,0,0,0,0,4,4,3,0,0,0,4,4,4,0,3,0,2,3,4,0,0,3,3,0,3,0,4,0,0,0,3,3,0,4,0,0,0],"p":[39,25,0,13],"locked":3,"turn":2,"sol":{"i":2,"to":6},"steal":false},{"m":[0,0,0,0,0,1,2,0,0,0,3,4,3,0,3,0,3,4,4,3,0,0,0,0,3,3,0,0,0,0,4,1,0,0,0,3,4,0,0,4,0,0,2,0,0,0,0,0,0],"p":[33,5,3,46],"locked":2,"turn":2,"sol":{"i":1,"to":23},"steal":true},{"m":[0,0,0,1,2,3,4,0,0,1,0,4,4,3,0,0,4,4,3,0,0,0,0,0,4,4,4,0,3,0,4,3,3,4,3,0,0,4,4,0,0,0,3,3,0,0,0,0,0],"p":[15,41,44,21],"locked":0,"turn":2,"sol":{"i":3,"to":22},"steal":false},{"m":[0,0,0,0,0,0,0,0,0,0,0,4,2,0,0,0,0,3,3,3,0,3,3,3,1,4,4,3,0,3,4,0,0,0,0,4,3,4,2,0,0,0,3,3,4,4,0,0,0],"p":[31,39,3,14],"locked":1,"turn":1,"sol":{"i":2,"to":10},"steal":false},{"m":[0,1,0,0,4,0,2,0,3,2,4,4,4,0,0,3,0,4,3,0,0,0,4,0,0,3,2,0,0,3,3,3,0,0,0,0,3,3,0,0,0,0,0,1,0,0,0,0,0],"p":[42,9,21,19],"locked":0,"turn":1,"sol":{"i":2,"to":28},"steal":false},{"m":[0,0,0,0,0,0,0,0,0,0,3,4,0,4,3,1,4,4,4,0,4,4,3,0,3,0,3,0,4,0,4,0,3,0,0,0,1,0,2,0,0,0,0,0,3,0,0,0,0],"p":[43,19,39,42],"locked":0,"turn":2,"sol":{"i":1,"to":15},"steal":false},{"m":[0,0,1,2,2,4,3,0,0,4,0,4,3,0,0,2,0,3,4,3,3,0,0,3,4,4,0,0,0,4,3,0,4,0,0,0,3,0,0,0,0,0,1,0,0,0,0,0,0],"p":[33,7,4,44],"locked":0,"turn":1,"sol":{"i":2,"to":10},"steal":true},{"m":[0,0,0,2,4,4,0,0,0,0,4,3,4,3,0,0,2,0,3,4,4,0,0,3,3,4,0,3,0,4,0,3,3,1,0,0,0,0,0,3,0,3,0,0,0,1,0,0,0],"p":[6,44,3,14],"locked":2,"turn":2,"sol":{"i":3,"to":15},"steal":false},{"m":[0,1,0,0,4,0,0,0,3,0,4,0,3,0,3,4,2,0,4,4,0,2,3,0,0,3,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0],"p":[36,9,24,13],"locked":0,"turn":2,"sol":{"i":3,"to":11},"steal":false},{"m":[0,0,0,1,0,1,4,0,0,0,0,3,3,0,0,0,0,3,0,0,0,0,0,0,0,0,1,2,0,0,0,3,3,0,0,0,3,3,4,4,0,0,2,2,2,0,0,0,0],"p":[35,19,47,30],"locked":3,"turn":1,"sol":{"i":1,"to":43},"steal":false},{"m":[0,0,4,0,0,0,2,0,2,3,4,2,3,3,0,0,4,2,0,3,0,0,0,0,0,3,0,0,0,1,0,3,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0],"p":[6,33,8,28],"locked":3,"turn":1,"sol":{"i":0,"to":42},"steal":true}];
+const TUTORIAL = [{"id":"deslizar","m":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":[6,18,8,16],"locked":-1,"turn":1,"goal":"slide"},{"id":"bloqueo","m":[0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"p":[5,18,8,16],"locked":0,"turn":1,"goal":"slide"},{"id":"conectar","m":[0,0,1,2,0,0,0,1,0,0,2,2,1,0,2,0,0,1,0,0,0,0,0,0,0],"p":[22,5,19,4],"locked":-1,"turn":1,"goal":"win"},{"id":"recuperar","m":[0,0,0,0,0,0,0,1,0,0,0,2,2,2,0,0,0,1,0,0,0,0,0,0,0],"p":[12,0,24,20],"locked":-1,"turn":1,"goal":"seal"},{"id":"reserva","m":[0,0,1,0,0,2,2,1,0,0,0,0,0,0,0,0,0,0,2,2,0,0,1,0,0],"p":[12,0,24,14],"locked":-1,"turn":1,"goal":"win2"},{"id":"final","m":[2,1,2,1,2,2,1,2,1,1,1,2,1,2,2,1,1,2,1,1,2,2,1,2,1],"p":[6,18,8,16],"locked":-1,"turn":1,"goal":"remove"}];
+</script>
+<script>
+'use strict';
+const E = window.Rastro;
+const $ = s => document.querySelector(s);
+const CVAR = {1:'var(--red)', 2:'var(--blue)'};
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('rastro.'+k); return v==null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('rastro.'+k, JSON.stringify(v)); }catch(e){} }
+};
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, reduceMotion ? 0 : ms));
+/* ================= Idiomas ================= */
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const LANGS = {
+  es: {
+    code:'es', label:'ES', game:'Rastro', tagline:'fichas sin dueño',
+    tabs:{ play:'Jugar', puzzles:'Problemas', tutorial:'Tutorial', rules:'Reglas' }, sound:'Sonido', language:'Idioma',
+    themes:{
+      clasico:{ name:'Clásico', t1:'Rojo', t2:'Azul', w:{ seal:'sellada', sealV:'sellar', mark:'huella', first:'tu primera huella' } },
+      mareas:{ name:'Mareas', t1:'Coral', t2:'Marino', w:{ seal:'fondeada', sealV:'fondear', mark:'estela', first:'tu primera estela' } },
+      nieve:{ name:'Nieve', t1:'Zorro', t2:'Lobo', w:{ seal:'helada', sealV:'helar', mark:'huella', first:'tu primera huella' } },
+      tinta:{ name:'Tinta', t1:'Bermellón', t2:'Índigo', w:{ seal:'lacrada', sealV:'lacrar', mark:'trazo', first:'tu primer trazo' } },
+      colmena:{ name:'Colmena', t1:'Miel', t2:'Lavanda', w:{ seal:'tapada', sealV:'tapar', mark:'néctar', first:'tu primer néctar' } },
+    },
+    st:{
+      replay:(i, n) => `Repetición · jugada ${i} de ${n}`, wins:n => `Gana ${n}`, byCount:' (por casillas)', draw:'Empate',
+      thinks:n => `${n} (bot) piensa`, yourTurn:'Te toca', turnOf:n => `Turno de ${n}`, yourTurnAs:n => `Te toca (${n})`,
+      place:(y, i, n) => `${y}: coloca una ficha (${i} de ${n})`, remove:y => `${y}: nadie puede deslizar, retira una ficha`, fill:y => `${y}: pinta una casilla libre`,
+      locked:n => `Esa ficha la acaba de mover ${n}: este turno no puedes tocarla.`, stuck:s => `Esa ficha está sobre una casilla tuya o ${s}: no puede moverse.`,
+    },
+    ban:{ youWon:'¡Has ganado!', botWins:'Gana el bot', wins:n => `Gana ${n}`, byCount:'Por número de casillas', connected:'Ha conectado sus dos lados', moves:n => `${n} jugadas`, again:'Otra partida', replay:'Ver repetición' },
+    bar:{ newGame:'Nueva partida', undo:'Deshacer', replay:'Ver repetición', started:n => `Empezó ${n} · se alterna cada partida`,
+      start:'Inicio', back:'Atrás', play:'Reproducir', pause:'Pausa', fwd:'Adelante', end:'Final', exit:'Salir',
+      hint:'Pista', reset:'Reiniciar', next:'Siguiente', repeat:'Repetir paso', finish:'Terminar' },
+    side:{ game:'Partida', rival:'Rival', bot:'Bot', two:'2 jugadores', color:'Tu color', level:'Nivel', levels:['Fácil', 'Medio', 'Difícil', 'Experto'], theme:'Tema',
+      board:'Tablero', size:'Tamaño', s7:'7×7 rápida', s9:'9×9 completa', shape:'Forma', shapes:{ clasico:'Clásico', lago:'Lago', islas:'Islas', recortado:'Recortado' },
+      specials:'Especiales', no:'No', rocks:'Rocas y anclas', opening:'Apertura', placement:'Colocación', fixed:'Fija',
+      note:'Cambiar una opción empieza una partida nueva.', you:'Tú', botScore:'Bot', reminder:'Recordatorio',
+      remind:w => `Mueve cualquier ficha menos la que acaba de mover tu rival. Deja tu ${w.mark} en la casilla de la que sale. Si era del rival, la recuperas y queda ${w.seal}. Une tus dos lados.`,
+      specNote:w => `<b>Roca:</b> no se pinta ni se cruza. <b>Ancla:</b> quien la pinta la deja ${w.seal} al instante.`,
+      holes:'Los huecos del tablero no existen: las fichas no los cruzan.' },
+    pz:{ title:i => `Problema ${i}`, plays:n => `Juega ${n}.`, win2:'Gana en 2 jugadas', anyway:', haga lo que haga el rival.',
+      tip:'Tu primera jugada debe dejar una victoria imparable para la siguiente.', count:(a, b) => `Problemas (${a}/${b} resueltos)`,
+      note:'Ordenados de menos a más opciones por turno. Sacados de partidas reales del bot y comprobados uno a uno.',
+      good:'Buena jugada. El rival se defiende…', hmm:'Mmm… veamos qué hace el rival.', finish:'Ahora remata: tienes una jugada que gana.',
+      defended:'El rival ha encontrado defensa. Pulsa Reiniciar y prueba otra idea.', oppWon:'El rival ha ganado. Pulsa Reiniciar y prueba otra idea.',
+      solved:'¡Resuelto!', notWin:'Esa no gana. Pulsa Reiniciar.' },
+    tut:(N1, N2, w) => ({
+      deslizar:{ title:'1 · Mover y dejar huella', text:`<p>Las fichas no son de nadie. Toca una ficha y luego una casilla en línea recta.</p><p>La casilla <b>de la que sale</b> se pinta de tu color: es tu ${w.mark}.</p>`, ok:`Eso es: has dejado ${w.first}.` },
+      bloqueo:{ title:'2 · La ficha bloqueada', text:`<p>${N2} acaba de mover la ficha del anillo discontinuo. <b>Este turno no puedes tocarla</b>: pruébalo.</p><p>Luego mueve cualquier otra.</p>`, ok:'Bien. Recuerda: siempre puedes mover cualquier ficha menos la última que movió tu rival.' },
+      conectar:{ title:'3 · Conectar', text:`<p>${N1} gana uniendo <b>arriba con abajo</b>; ${N2}, izquierda con derecha.</p><p>Te falta una casilla. ¿Cuál? Gana ahora.</p>`, ok:'¡Conectado! Así se gana.' },
+      recuperar:{ title:`4 · Recuperar y ${w.sealV}`, text:`<p>Puedes acabar un movimiento sobre una casilla del rival. Cuando la ficha sale de ahí, la casilla pasa a ser tuya y queda <b>${w.seal}</b>: nadie podrá cambiarla.</p><p>Mueve la ficha que está sobre la casilla de ${N2} del centro.</p>`, ok:`¡${cap(w.seal)}! (color intenso). Esas casillas son oro: nadie te las quita.` },
+      reserva:{ title:'5 · La reserva', text:'<p>La idea clave. Te faltan dos casillas en tu columna.</p><p>Si dejas una ficha sobre una casilla que necesitas, tu rival <b>no podrá moverla</b> en su turno, y en el siguiente la mueves tú y pintas. <b>Gana en 2 jugadas.</b></p>', ok:'¡Eso es la reserva! Con ella se ganan la mayoría de partidas.' },
+      final:{ title:'6 · El final', text:`<p>A veces ninguna ficha puede deslizarse (están sobre casillas tuyas o ${w.seal}s).</p><p>Entonces <b>retiras una ficha</b> del tablero. Si ya no quedan, pintas una casilla libre. El tablero acaba lleno y siempre hay ganador.</p><p>Retira una ficha.</p>`, ok:'Perfecto. Ya sabes todo lo necesario.' },
+    }),
+    tutReserve:n => `${n} no puede tocar tu ficha reservada. Remata.`, tutAlmost:'Casi. Pulsa «Repetir paso» y prueba otra vez.',
+    rules:(N1, N2, w) => `<h2>Reglas</h2><ol>
+      <li><b>${N1}</b> une arriba con abajo y <b>${N2}</b> izquierda con derecha, con una cadena de casillas de su color.</li>
+      <li>Hay 4 fichas <b>neutrales</b>. En tu turno mueves <b>cualquiera</b>, salvo la que acaba de mover tu rival (anillo discontinuo).</li>
+      <li>La ficha se desliza en línea recta por cualquiera de las 6 direcciones, sin saltar otras fichas, y acaba en una casilla <b>vacía o del rival</b>.</li>
+      <li>Se pinta de tu color <b>la casilla de la que sale</b>. Si era del rival, la <b>recuperas y queda ${w.seal}</b> para siempre.</li>
+      <li>Una ficha sobre una casilla tuya o ${w.seal} no puede moverse.</li>
+      <li><b>Final:</b> si nadie puede deslizar, retiras una ficha (pintando su casilla si se puede). Sin fichas, pintas una casilla libre.</li></ol>
+      <h3>Apertura</h3><p style="margin:0 0 6px"><b>Colocación:</b> antes de mover, los jugadores colocan las 4 fichas por turnos donde quieran. Quien empieza coloca la 1ª y la 3ª y hace el primer movimiento. <b>Fija:</b> las fichas empiezan en el centro.</p>
+      <h3>Modos de tablero</h3><p style="margin:0 0 6px"><b>Formas:</b> lago, islas o esquinas recortadas. Son huecos que las fichas no cruzan.</p>
+      <p style="margin:0 0 6px"><b>Especiales:</b> rocas (ni se pintan ni se cruzan) y anclas (quien la pinta la deja ${w.seal} al momento). Cambian de sitio en cada partida, siempre colocadas de forma simétrica para que sea justo.</p>
+      <p class="muted" style="margin:0">Con huecos o rocas puede darse, muy rara vez, que nadie pueda conectar. Entonces gana quien tenga más casillas.</p>
+      <h3>Consejo</h3><p style="margin:0">La ficha que acabas de mover no la puede tocar tu rival. Déjala donde quieras pintar en tu siguiente turno: es la <b>reserva</b>.</p>`,
+  },
+
+  en: {
+    code:'en', label:'EN', game:'Trail', tagline:'pieces nobody owns',
+    tabs:{ play:'Play', puzzles:'Puzzles', tutorial:'Tutorial', rules:'Rules' }, sound:'Sound', language:'Language',
+    themes:{
+      clasico:{ name:'Classic', t1:'Red', t2:'Blue', w:{ seal:'sealed', sealV:'seal', mark:'footprint', first:'your first footprint' } },
+      mareas:{ name:'Tides', t1:'Coral', t2:'Navy', w:{ seal:'anchored', sealV:'anchor', mark:'wake', first:'your first wake' } },
+      nieve:{ name:'Snow', t1:'Fox', t2:'Wolf', w:{ seal:'frozen', sealV:'freeze', mark:'paw print', first:'your first paw print' } },
+      tinta:{ name:'Ink', t1:'Vermilion', t2:'Indigo', w:{ seal:'wax-sealed', sealV:'wax-seal', mark:'stroke', first:'your first stroke' } },
+      colmena:{ name:'Hive', t1:'Honey', t2:'Lavender', w:{ seal:'capped', sealV:'cap', mark:'nectar', first:'your first drop of nectar' } },
+    },
+    st:{
+      replay:(i, n) => `Replay · move ${i} of ${n}`, wins:n => `${n} wins`, byCount:' (on cell count)', draw:'Draw',
+      thinks:n => `${n} (bot) is thinking`, yourTurn:'Your turn', turnOf:n => `${n} to move`, yourTurnAs:n => `Your turn (${n})`,
+      place:(y, i, n) => `${y}: place a piece (${i} of ${n})`, remove:y => `${y}: nobody can slide, remove a piece`, fill:y => `${y}: paint an empty cell`,
+      locked:n => `${n} just moved that piece: you can't touch it this turn.`, stuck:s => `That piece sits on a cell that is yours or ${s}: it can't move.`,
+    },
+    ban:{ youWon:'You won!', botWins:'The bot wins', wins:n => `${n} wins`, byCount:'On cell count', connected:'Connected both sides', moves:n => `${n} moves`, again:'Play again', replay:'Watch replay' },
+    bar:{ newGame:'New game', undo:'Undo', replay:'Watch replay', started:n => `${n} started · alternates every game`,
+      start:'Start', back:'Back', play:'Play', pause:'Pause', fwd:'Forward', end:'End', exit:'Exit',
+      hint:'Hint', reset:'Reset', next:'Next', repeat:'Repeat step', finish:'Finish' },
+    side:{ game:'Game', rival:'Opponent', bot:'Bot', two:'2 players', color:'Your colour', level:'Level', levels:['Easy', 'Medium', 'Hard', 'Expert'], theme:'Theme',
+      board:'Board', size:'Size', s7:'7×7 quick', s9:'9×9 full', shape:'Shape', shapes:{ clasico:'Classic', lago:'Lake', islas:'Islands', recortado:'Trimmed' },
+      specials:'Specials', no:'No', rocks:'Rocks & anchors', opening:'Opening', placement:'Placement', fixed:'Fixed',
+      note:'Changing an option starts a new game.', you:'You', botScore:'Bot', reminder:'Quick reminder',
+      remind:w => `Move any piece except the one your opponent just moved. You leave your ${w.mark} on the cell it leaves. If that cell was your opponent's, you take it back and it becomes ${w.seal}. Connect your two sides.`,
+      specNote:w => `<b>Rock:</b> can't be painted or crossed. <b>Anchor:</b> whoever paints it leaves it ${w.seal} at once.`,
+      holes:'Holes in the board don\'t exist: pieces can\'t cross them.' },
+    pz:{ title:i => `Puzzle ${i}`, plays:n => `${n} to play.`, win2:'Win in 2 moves', anyway:', whatever your opponent does.',
+      tip:'Your first move must leave an unstoppable win for the next one.', count:(a, b) => `Puzzles (${a}/${b} solved)`,
+      note:'Sorted from fewer to more options per turn. Taken from real bot games and checked one by one.',
+      good:'Good move. Your opponent defends…', hmm:'Hmm… let\'s see what your opponent does.', finish:'Now finish it: you have a winning move.',
+      defended:'Your opponent found a defence. Press Reset and try another idea.', oppWon:'Your opponent won. Press Reset and try another idea.',
+      solved:'Solved!', notWin:'That one doesn\'t win. Press Reset.' },
+    tut:(N1, N2, w) => ({
+      deslizar:{ title:'1 · Move and leave a trail', text:`<p>Pieces belong to nobody. Tap a piece, then a cell in a straight line.</p><p>The cell <b>it leaves</b> takes your colour: that's your ${w.mark}.</p>`, ok:`That's it: you've left ${w.first}.` },
+      bloqueo:{ title:'2 · The locked piece', text:`<p>${N2} just moved the piece with the dashed ring. <b>You can't touch it this turn</b>: try it.</p><p>Then move any other one.</p>`, ok:'Good. Remember: you can always move any piece except the last one your opponent moved.' },
+      conectar:{ title:'3 · Connect', text:`<p>${N1} wins by joining <b>top and bottom</b>; ${N2}, left and right.</p><p>You're one cell short. Which one? Win now.</p>`, ok:'Connected! That\'s how you win.' },
+      recuperar:{ title:`4 · Take back and ${w.sealV}`, text:`<p>You can end a move on one of your opponent's cells. When the piece leaves it, the cell becomes yours and stays <b>${w.seal}</b>: nobody can change it again.</p><p>Move the piece sitting on ${N2}'s cell in the middle.</p>`, ok:`${cap(w.seal)}! (deep colour). Those cells are gold: nobody can take them from you.` },
+      reserva:{ title:'5 · The reserve', text:'<p>The key idea. You need two more cells in your column.</p><p>If you leave a piece on a cell you need, your opponent <b>can\'t move it</b> on their turn, and on your next turn you move it and paint. <b>Win in 2 moves.</b></p>', ok:'That\'s the reserve! It wins most games.' },
+      final:{ title:'6 · The ending', text:`<p>Sometimes no piece can slide (they all sit on cells that are yours or ${w.seal}).</p><p>Then you <b>remove a piece</b> from the board. If none are left, you paint any empty cell. The board ends up full and there's always a winner.</p><p>Remove a piece.</p>`, ok:'Perfect. You know everything you need.' },
+    }),
+    tutReserve:n => `${n} can't touch your reserved piece. Finish it.`, tutAlmost:'Almost. Press "Repeat step" and try again.',
+    rules:(N1, N2, w) => `<h2>Rules</h2><ol>
+      <li><b>${N1}</b> joins top and bottom and <b>${N2}</b> left and right, with a chain of cells of their colour.</li>
+      <li>There are 4 <b>neutral</b> pieces. On your turn you move <b>any</b> of them, except the one your opponent just moved (dashed ring).</li>
+      <li>The piece slides in a straight line in any of the 6 directions, without jumping over other pieces, and stops on a cell that is <b>empty or your opponent's</b>.</li>
+      <li><b>The cell it leaves</b> takes your colour. If it was your opponent's, you <b>take it back and it stays ${w.seal}</b> for good.</li>
+      <li>A piece on a cell that is yours or ${w.seal} can't move.</li>
+      <li><b>Ending:</b> if nobody can slide, you remove a piece (painting its cell if possible). With no pieces left, you paint an empty cell.</li></ol>
+      <h3>Opening</h3><p style="margin:0 0 6px"><b>Placement:</b> before moving, players take turns placing the 4 pieces anywhere. Whoever starts places the 1st and 3rd and makes the first move. <b>Fixed:</b> pieces start in the centre.</p>
+      <h3>Board modes</h3><p style="margin:0 0 6px"><b>Shapes:</b> lake, islands or trimmed corners. They are holes pieces can't cross.</p>
+      <p style="margin:0 0 6px"><b>Specials:</b> rocks (can't be painted or crossed) and anchors (whoever paints one leaves it ${w.seal} at once). They move every game, always placed symmetrically so it stays fair.</p>
+      <p class="muted" style="margin:0">With holes or rocks it can very rarely happen that nobody can connect. Then whoever has more cells wins.</p>
+      <h3>Tip</h3><p style="margin:0">Your opponent can't touch the piece you just moved. Leave it where you want to paint next turn: that's the <b>reserve</b>.</p>`,
+  },
+
+  gl: {
+    code:'gl', label:'GL', game:'Rastro', tagline:'fichas sen dono',
+    tabs:{ play:'Xogar', puzzles:'Problemas', tutorial:'Titorial', rules:'Regras' }, sound:'Son', language:'Idioma',
+    themes:{
+      clasico:{ name:'Clásico', t1:'Vermello', t2:'Azul', w:{ seal:'selada', sealV:'selar', mark:'pegada', first:'a túa primeira pegada' } },
+      mareas:{ name:'Mareas', t1:'Coral', t2:'Mariño', w:{ seal:'fondeada', sealV:'fondear', mark:'estela', first:'a túa primeira estela' } },
+      nieve:{ name:'Neve', t1:'Raposo', t2:'Lobo', w:{ seal:'xeada', sealV:'xear', mark:'pegada', first:'a túa primeira pegada' } },
+      tinta:{ name:'Tinta', t1:'Vermellón', t2:'Índigo', w:{ seal:'lacrada', sealV:'lacrar', mark:'trazo', first:'o teu primeiro trazo' } },
+      colmena:{ name:'Colmea', t1:'Mel', t2:'Lavanda', w:{ seal:'tapada', sealV:'tapar', mark:'néctar', first:'o teu primeiro néctar' } },
+    },
+    st:{
+      replay:(i, n) => `Repetición · xogada ${i} de ${n}`, wins:n => `Gaña ${n}`, byCount:' (por casas)', draw:'Empate',
+      thinks:n => `${n} (bot) pensa`, yourTurn:'Tócache', turnOf:n => `Quenda de ${n}`, yourTurnAs:n => `Tócache (${n})`,
+      place:(y, i, n) => `${y}: coloca unha ficha (${i} de ${n})`, remove:y => `${y}: ninguén pode esvarar, retira unha ficha`, fill:y => `${y}: pinta unha casa libre`,
+      locked:n => `Esa ficha acaba de movela ${n}: nesta quenda non podes tocala.`, stuck:s => `Esa ficha está sobre unha casa túa ou ${s}: non se pode mover.`,
+    },
+    ban:{ youWon:'Gañaches!', botWins:'Gaña o bot', wins:n => `Gaña ${n}`, byCount:'Por número de casas', connected:'Uniu os seus dous lados', moves:n => `${n} xogadas`, again:'Outra partida', replay:'Ver repetición' },
+    bar:{ newGame:'Nova partida', undo:'Desfacer', replay:'Ver repetición', started:n => `Comezou ${n} · altérnase en cada partida`,
+      start:'Inicio', back:'Atrás', play:'Reproducir', pause:'Pausa', fwd:'Adiante', end:'Final', exit:'Saír',
+      hint:'Pista', reset:'Reiniciar', next:'Seguinte', repeat:'Repetir paso', finish:'Rematar' },
+    side:{ game:'Partida', rival:'Rival', bot:'Bot', two:'2 xogadores', color:'A túa cor', level:'Nivel', levels:['Doado', 'Medio', 'Difícil', 'Experto'], theme:'Tema',
+      board:'Taboleiro', size:'Tamaño', s7:'7×7 rápida', s9:'9×9 completa', shape:'Forma', shapes:{ clasico:'Clásico', lago:'Lago', islas:'Illas', recortado:'Recortado' },
+      specials:'Especiais', no:'Non', rocks:'Rochas e áncoras', opening:'Apertura', placement:'Colocación', fixed:'Fixa',
+      note:'Cambiar unha opción comeza unha partida nova.', you:'Ti', botScore:'Bot', reminder:'Lembranza',
+      remind:w => `Move calquera ficha menos a que acaba de mover o teu rival. Deixas a túa ${w.mark} na casa da que sae. Se era do rival, recupérala e queda ${w.seal}. Une os teus dous lados.`,
+      specNote:w => `<b>Rocha:</b> non se pinta nin se cruza. <b>Áncora:</b> quen a pinta déixaa ${w.seal} ao momento.`,
+      holes:'Os ocos do taboleiro non existen: as fichas non os cruzan.' },
+    pz:{ title:i => `Problema ${i}`, plays:n => `Xoga ${n}.`, win2:'Gaña en 2 xogadas', anyway:', faga o que faga o rival.',
+      tip:'A túa primeira xogada debe deixar unha vitoria imparable para a seguinte.', count:(a, b) => `Problemas (${a}/${b} resoltos)`,
+      note:'Ordenados de menos a máis opcións por quenda. Sacados de partidas reais do bot e comprobados un a un.',
+      good:'Boa xogada. O rival defende…', hmm:'Mmm… vexamos que fai o rival.', finish:'Agora remata: tes unha xogada que gaña.',
+      defended:'O rival atopou defensa. Preme Reiniciar e proba outra idea.', oppWon:'O rival gañou. Preme Reiniciar e proba outra idea.',
+      solved:'Resolto!', notWin:'Esa non gaña. Preme Reiniciar.' },
+    tut:(N1, N2, w) => ({
+      deslizar:{ title:'1 · Mover e deixar pegada', text:`<p>As fichas non son de ninguén. Toca unha ficha e logo unha casa en liña recta.</p><p>A casa <b>da que sae</b> píntase da túa cor: é a túa ${w.mark}.</p>`, ok:`Iso é: deixaches ${w.first}.` },
+      bloqueo:{ title:'2 · A ficha bloqueada', text:`<p>${N2} acaba de mover a ficha do anel descontinuo. <b>Nesta quenda non podes tocala</b>: próbao.</p><p>Logo move calquera outra.</p>`, ok:'Ben. Lembra: sempre podes mover calquera ficha menos a última que moveu o teu rival.' },
+      conectar:{ title:'3 · Unir', text:`<p>${N1} gaña unindo <b>arriba con abaixo</b>; ${N2}, esquerda con dereita.</p><p>Fáltache unha casa. Cal? Gaña agora.</p>`, ok:'Unido! Así se gaña.' },
+      recuperar:{ title:`4 · Recuperar e ${w.sealV}`, text:`<p>Podes acabar un movemento sobre unha casa do rival. Cando a ficha sae de aí, a casa pasa a ser túa e queda <b>${w.seal}</b>: ninguén poderá cambiala.</p><p>Move a ficha que está sobre a casa de ${N2} do centro.</p>`, ok:`${cap(w.seal)}! (cor intensa). Esas casas son ouro: ninguén cha quita.` },
+      reserva:{ title:'5 · A reserva', text:'<p>A idea clave. Fáltanche dúas casas na túa columna.</p><p>Se deixas unha ficha sobre unha casa que precisas, o teu rival <b>non poderá movela</b> na súa quenda, e na seguinte móvela ti e pintas. <b>Gaña en 2 xogadas.</b></p>', ok:'Iso é a reserva! Con ela gáñanse a maioría das partidas.' },
+      final:{ title:'6 · O final', text:`<p>Ás veces ningunha ficha pode esvarar (están sobre casas túas ou ${w.seal}s).</p><p>Entón <b>retiras unha ficha</b> do taboleiro. Se xa non quedan, pintas unha casa libre. O taboleiro remata cheo e sempre hai gañador.</p><p>Retira unha ficha.</p>`, ok:'Perfecto. Xa sabes todo o necesario.' },
+    }),
+    tutReserve:n => `${n} non pode tocar a túa ficha reservada. Remata.`, tutAlmost:'Case. Preme «Repetir paso» e proba outra vez.',
+    rules:(N1, N2, w) => `<h2>Regras</h2><ol>
+      <li><b>${N1}</b> une arriba con abaixo e <b>${N2}</b> esquerda con dereita, cunha cadea de casas da súa cor.</li>
+      <li>Hai 4 fichas <b>neutrais</b>. Na túa quenda moves <b>calquera</b>, agás a que acaba de mover o teu rival (anel descontinuo).</li>
+      <li>A ficha esvara en liña recta por calquera das 6 direccións, sen saltar outras fichas, e acaba nunha casa <b>baleira ou do rival</b>.</li>
+      <li>Píntase da túa cor <b>a casa da que sae</b>. Se era do rival, <b>recupérala e queda ${w.seal}</b> para sempre.</li>
+      <li>Unha ficha sobre unha casa túa ou ${w.seal} non se pode mover.</li>
+      <li><b>Final:</b> se ninguén pode esvarar, retiras unha ficha (pintando a súa casa se se pode). Sen fichas, pintas unha casa libre.</li></ol>
+      <h3>Apertura</h3><p style="margin:0 0 6px"><b>Colocación:</b> antes de mover, os xogadores colocan as 4 fichas por quendas onde queiran. Quen comeza coloca a 1ª e a 3ª e fai o primeiro movemento. <b>Fixa:</b> as fichas comezan no centro.</p>
+      <h3>Modos de taboleiro</h3><p style="margin:0 0 6px"><b>Formas:</b> lago, illas ou esquinas recortadas. Son ocos que as fichas non cruzan.</p>
+      <p style="margin:0 0 6px"><b>Especiais:</b> rochas (nin se pintan nin se cruzan) e áncoras (quen a pinta déixaa ${w.seal} ao momento). Cambian de sitio en cada partida, sempre colocadas de xeito simétrico para que sexa xusto.</p>
+      <p class="muted" style="margin:0">Con ocos ou rochas pode pasar, moi rara vez, que ninguén poida unir. Entón gaña quen teña máis casas.</p>
+      <h3>Consello</h3><p style="margin:0">A ficha que acabas de mover non a pode tocar o teu rival. Déixaa onde queiras pintar na túa seguinte quenda: é a <b>reserva</b>.</p>`,
+  },
+};
+function detectLang(){
+  const saved = store.get('lang', null); if (saved && LANGS[saved]) return saved;
+  const n = (navigator.language || 'en').toLowerCase();
+  if (n.startsWith('gl')) return 'gl'; if (n.startsWith('es') || n.startsWith('ca') || n.startsWith('eu')) return 'es';
+  return 'en';
+}
+let L = LANGS[detectLang()];
+
+/* ================= Temas ================= */
+const THEMES = {
+  clasico: { id:'clasico', name:'Clásico', t1:'Rojo', t2:'Azul',
+    w:{ seal:'sellada', sealV:'sellar', mark:'huella', piece:'ficha' },
+    vars:{ bg:'#f5f1ea', paper:'#fffdf9', ink:'#24211d', muted:'#7a7369', line:'#e4dccf', cell:'#ebe4d8', 'cell-stroke':'#d3c9b8',
+      red:'#d65746', 'red-soft':'#f1b2a7', 'red-ink':'#a83a2c', blue:'#3d72c6', 'blue-soft':'#afc7ee', 'blue-ink':'#2a5297', accent:'#e2a72e', rock:'#857e73', nav:'#ebe5da' },
+    slide:{ f:500, f2:1500, q:.8, gain:.07 },
+    piece(b, el){
+      el('circle', {r:5.6, fill:'url(#stone)', filter:'url(#shadow)', stroke:'#fff', 'stroke-width':.55, class:'stone'}, b);
+      el('circle', {r:2, cx:-1.6, cy:-2, fill:'#fff', opacity:.12}, b);
+    },
+    defs:`<radialGradient id="stone" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="#5a554d"/><stop offset=".45" stop-color="#2f2c27"/><stop offset="1" stop-color="#1b1916"/></radialGradient>`,
+  },
+  mareas: { id:'mareas', name:'Mareas', t1:'Coral', t2:'Marino',
+    w:{ seal:'fondeada', sealV:'fondear', mark:'estela', piece:'barca' },
+    vars:{ bg:'#e6eff1', paper:'#f8fcfd', ink:'#17303a', muted:'#5f7780', line:'#cfdfe4', cell:'#d3e7ec', 'cell-stroke':'#b2d0d8',
+      red:'#e0623f', 'red-soft':'#f5bba5', 'red-ink':'#b2401f', blue:'#1f4f86', 'blue-soft':'#9fb9db', 'blue-ink':'#163a63', accent:'#f0b43a', rock:'#7d7466', nav:'#d9e7eb' },
+    slide:{ f:260, f2:700, q:.6, gain:.1 },
+    piece(b, el){
+      el('path', {class:'stone', filter:'url(#shadow)', d:'M0,-6.2 C3.9,-3.2 3.7,2.6 2.5,5.4 L-2.5,5.4 C-3.7,2.6 -3.9,-3.2 0,-6.2Z', fill:'url(#wood)', stroke:'#fff', 'stroke-width':.5}, b);
+      el('path', {d:'M0,-4.6 C2.6,-2.4 2.5,2 1.7,4.3 L-1.7,4.3 C-2.5,2 -2.6,-2.4 0,-4.6Z', fill:'#c08a55', opacity:.55}, b);
+      el('path', {d:'M0.2,-3.6 L2.6,2.4 L0.2,2.4Z', fill:'#fffaf0', stroke:'#e9dcc4', 'stroke-width':.25}, b);
+      el('circle', {cx:.2, cy:2.4, r:.45, fill:'#5a3a1f'}, b);
+    },
+    deco(g, x, y, el){
+      el('path', {class:'deco', d:`M${x - 4} ${y + 1.2} q1 -1 2 0 t2 0 t2 0 t2 0`, fill:'none', stroke:'#fff', 'stroke-width':.45, opacity:.55}, g);
+      el('path', {class:'deco', d:`M${x - 2.5} ${y + 3.4} q1 -1 2 0 t2 0 t2 0`, fill:'none', stroke:'#fff', 'stroke-width':.4, opacity:.4}, g);
+    },
+    defs:`<linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a8764a"/><stop offset="1" stop-color="#6b4325"/></linearGradient>`,
+  },
+  nieve: { id:'nieve', name:'Nieve', t1:'Zorro', t2:'Lobo',
+    w:{ seal:'helada', sealV:'helar', mark:'huella', piece:'piedra' },
+    vars:{ bg:'#edf1f5', paper:'#fcfdff', ink:'#1f2a36', muted:'#6b7887', line:'#dbe3ec', cell:'#f6f8fb', 'cell-stroke':'#d4dde8',
+      red:'#d8742a', 'red-soft':'#f4c9a2', 'red-ink':'#a9531a', blue:'#4c6a8a', 'blue-soft':'#bccbdb', 'blue-ink':'#33506d', accent:'#5fb3d9', rock:'#8994a0', nav:'#e2e8ef' },
+    slide:{ f:2800, f2:6000, q:.5, gain:.06 },
+    piece(b, el){
+      el('circle', {class:'stone', r:5.6, fill:'url(#granite)', filter:'url(#shadow)', stroke:'#fff', 'stroke-width':.55}, b);
+      el('circle', {r:3.9, fill:'none', stroke:'#c8d2dd', 'stroke-width':.9, opacity:.9}, b);
+      el('rect', {x:-.85, y:-3.3, width:1.7, height:5, rx:.85, fill:'#c0392b'}, b);
+      el('rect', {x:-1.9, y:-3.6, width:3.8, height:1.5, rx:.75, fill:'#a93226'}, b);
+    },
+    deco(g, x, y, el){
+      [[-2.6,-1.8,.35],[2.2,2.2,.3],[1.2,-3,.25],[-1,3,.22]].forEach(([dx, dy, r]) => el('circle', {class:'deco', cx:x + dx, cy:y + dy, r, fill:'#fff', opacity:.9}, g));
+      el('g', {class:'deco paw', transform:`translate(${x},${y}) scale(.9)`, fill:'#fff', opacity:0}, g).innerHTML =
+        '<ellipse cx="0" cy="1" rx="1.5" ry="1.2"/><circle cx="-1.6" cy="-1" r=".55"/><circle cx="-.55" cy="-1.8" r=".55"/><circle cx=".55" cy="-1.8" r=".55"/><circle cx="1.6" cy="-1" r=".55"/>';
+    },
+    defs:`<radialGradient id="granite" cx="40%" cy="35%" r="75%"><stop offset="0" stop-color="#9aa1aa"/><stop offset=".6" stop-color="#6c737c"/><stop offset="1" stop-color="#4a5058"/></radialGradient>`,
+  },
+  tinta: { id:'tinta', name:'Tinta', t1:'Bermellón', t2:'Índigo',
+    w:{ seal:'lacrada', sealV:'lacrar', mark:'trazo', piece:'tintero' },
+    vars:{ bg:'#f2ebdd', paper:'#fbf7ee', ink:'#221d18', muted:'#7c7163', line:'#e2d6c0', cell:'#efe5cf', 'cell-stroke':'#d6c6a6',
+      red:'#c0391f', 'red-soft':'#e9ae9f', 'red-ink':'#8f2814', blue:'#2c3c8c', 'blue-soft':'#a9b2dc', 'blue-ink':'#1d2a69', accent:'#b8892f', rock:'#6d665c', nav:'#e8dfcc' },
+    slide:{ f:1400, f2:900, q:.4, gain:.06 },
+    piece(b, el){
+      el('circle', {class:'stone', r:5.6, fill:'#8b6a3c', filter:'url(#shadow)', stroke:'#fff', 'stroke-width':.5}, b);
+      el('circle', {r:4.5, fill:'url(#ink)'}, b);
+      el('path', {d:'M-2.6,-1.6 A3.1,3.1 0 0 1 1.2,-3.1', fill:'none', stroke:'#fff', 'stroke-width':.55, opacity:.35, 'stroke-linecap':'round'}, b);
+    },
+    deco(g, x, y, el){
+      el('path', {class:'deco', d:`M${x - 3.5} ${y + 2.5} Q${x} ${y + 1.6} ${x + 3.4} ${y + 2.9}`, fill:'none', stroke:'#c9b48d', 'stroke-width':.35, opacity:.45}, g);
+    },
+    defs:`<radialGradient id="ink" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#3a342e"/><stop offset="1" stop-color="#0d0b09"/></radialGradient>`,
+  },
+  colmena: { id:'colmena', name:'Colmena', t1:'Miel', t2:'Lavanda',
+    w:{ seal:'tapada', sealV:'tapar', mark:'néctar', piece:'abeja' },
+    vars:{ bg:'#faf2da', paper:'#fffaea', ink:'#2b2111', muted:'#82734f', line:'#eedfae', cell:'#faefcf', 'cell-stroke':'#e3c777',
+      red:'#d97f06', 'red-soft':'#f3bd4f', 'red-ink':'#a96508', blue:'#7254ab', 'blue-soft':'#cbbbe7', 'blue-ink':'#523785', accent:'#3a2d12', rock:'#8d7a52', nav:'#f2e6bf' },
+    slide:{ f:700, f2:900, q:6, gain:.05 },
+    piece(b, el){
+      el('ellipse', {cx:-2.6, cy:-1.6, rx:2.3, ry:1.4, fill:'#fff', opacity:.75, stroke:'#d8e2ea', 'stroke-width':.25, transform:'rotate(-25 -2.6 -1.6)'}, b);
+      el('ellipse', {cx:2.6, cy:-1.6, rx:2.3, ry:1.4, fill:'#fff', opacity:.75, stroke:'#d8e2ea', 'stroke-width':.25, transform:'rotate(25 2.6 -1.6)'}, b);
+      el('ellipse', {class:'stone', cx:0, cy:.6, rx:3.1, ry:4.4, fill:'#f2b31c', filter:'url(#shadow)', stroke:'#fff', 'stroke-width':.45}, b);
+      const s = el('g', {'clip-path':'url(#beeclip)'}, b);
+      [-.6, 1.6, 3.8].forEach(yy => el('rect', {x:-4, y:yy - .6, width:8, height:1.2, fill:'#2b2111'}, s));
+      el('circle', {cx:0, cy:-4, r:1.6, fill:'#2b2111'}, b);
+    },
+    deco(g, x, y, el){
+      const p = [0,1,2,3,4,5].map(i => { const a = Math.PI / 180 * (60 * i + 30); return (x + 6.4 * Math.cos(a)).toFixed(2) + ',' + (y + 6.4 * Math.sin(a)).toFixed(2); }).join(' ');
+      el('polygon', {class:'deco', points:p, fill:'none', stroke:'#fff', 'stroke-width':.4, opacity:.5}, g);
+    },
+    defs:`<clipPath id="beeclip"><ellipse cx="0" cy=".6" rx="3.1" ry="4.4"/></clipPath>`,
+  },
+};
+let TH = THEMES[store.get('theme', 'clasico')] || THEMES.clasico;
+const NAME = {1:'', 2:''};
+function applyTheme(){
+  const r = document.documentElement.style;
+  for (const [k, v] of Object.entries(TH.vars)) r.setProperty('--' + k, v);
+  const lt = L.themes[TH.id]; TH.w = lt.w; TH.name = lt.name;
+  NAME[1] = lt.t1; NAME[2] = lt.t2; document.body.dataset.theme = TH.id;
+}
+applyTheme();
+function applyLang(){
+  document.documentElement.lang = L.code;
+  document.title = `${L.game} — ${L.tagline}`;
+  $('.brand h1').textContent = L.game; $('.brand span').textContent = L.tagline;
+  document.querySelectorAll('#tabs button').forEach(b => b.textContent = L.tabs[b.dataset.tab]);
+  $('#soundBtn').title = L.sound; $('#soundBtn').setAttribute('aria-label', L.sound);
+  document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === L.code));
+  applyTheme();
+}
+
+
+/* ================= Sonido (sintetizado, sin archivos) ================= */
+const Sound = (() => {
+  let ctx = null, master = null, on = store.get('sound', true);
+  function ensure(){
+    if (!on) return null;
+    try{
+      if (!ctx){ ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination); }
+      if (ctx.state === 'suspended') ctx.resume();
+    }catch(e){ return null; }
+    return ctx;
+  }
+  function tone({f=440, f2=null, type='sine', dur=.15, gain=.25, attack=.004, when=0, filter=null}){
+    const c = ensure(); if (!c) return;
+    const t = c.currentTime + when, o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    let node = o;
+    if (filter){ const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = filter; o.connect(fl); node = fl; }
+    node.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05);
+  }
+  function noise({dur=.2, gain=.12, f=1200, f2=null, q=1.2, when=0, type='bandpass'}){
+    const c = ensure(); if (!c) return;
+    const t = c.currentTime + when, len = Math.ceil(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain();
+    src.buffer = buf; fl.type = type; fl.Q.value = q; fl.frequency.setValueAtTime(f, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(fl); fl.connect(g); g.connect(master); src.start(t); src.stop(t + dur + .02);
+  }
+  const S = {
+    select(){ if (TH.id === 'colmena'){ tone({f:210, f2:240, dur:.22, gain:.06, type:'sawtooth', filter:900}); return; } tone({f:880, f2:1100, dur:.06, gain:.08, type:'triangle'}); },
+    deselect(){ tone({f:700, f2:560, dur:.06, gain:.06, type:'triangle'}); },
+    slide(d){ const p = TH.slide; noise({dur:Math.max(.12, d/1000), gain:p.gain, f:p.f, f2:p.f2, q:p.q}); },
+    land(){ tone({f:190, f2:120, dur:.09, gain:.28, type:'sine'}); noise({dur:.05, gain:.08, f:2500, q:2}); },
+    place(){ tone({f:150, f2:95, dur:.12, gain:.32}); noise({dur:.06, gain:.1, f:1800, q:1.5}); },
+    paint(pl){ const b = pl === 1 ? 392 : 523.25; tone({f:b, f2:b * 1.5, dur:.14, gain:.13, type:'triangle', filter:2400}); },
+    seal(pl){ const b = pl === 1 ? 659.25 : 783.99; tone({f:b, dur:.9, gain:.11}); tone({f:b * 2.01, dur:.7, gain:.05, when:.01}); tone({f:b * 1.5, dur:.8, gain:.07, when:.09}); },
+    remove(){ tone({f:520, f2:180, dur:.25, gain:.12, type:'triangle'}); },
+    error(){ tone({f:140, dur:.12, gain:.14, type:'square', filter:500}); },
+    win(){ [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone({f, dur:.5, gain:.13, type:'triangle', when:i * .11, filter:3000})); },
+    lose(){ [392, 349.23, 293.66].forEach((f, i) => tone({f, dur:.5, gain:.11, type:'triangle', when:i * .16, filter:1800})); },
+    ok(){ [659.25, 987.77].forEach((f, i) => tone({f, dur:.35, gain:.1, type:'triangle', when:i * .09})); },
+  };
+  return {
+    play(name, ...a){ if (on && S[name]) try{ S[name](...a); }catch(e){} },
+    get on(){ return on; },
+    toggle(){ on = !on; store.set('sound', on); if (on) ensure(); return on; },
+    unlock(){ ensure(); }
+  };
+})();
+function drawSoundBtn(){
+  $('#soundBtn').innerHTML = Sound.on
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6M16 9l6 6"/></svg>';
+}
+$('#soundBtn').onclick = () => { Sound.toggle(); drawSoundBtn(); };
+document.addEventListener('pointerdown', () => Sound.unlock(), {once:true});
+drawSoundBtn();
+
+/* ================= Bot en un Web Worker (no congela las animaciones) ================= */
+const Bot = (() => {
+  let worker = null, seq = 0; const pending = new Map();
+  try{
+    const src = document.getElementById('engine').textContent + `
+      self.onmessage = e => {
+        const {id, opts, st, level} = e.data;
+        const B = Rastro.makeBoard(opts), s = Rastro.fromJSON(st);
+        let mv = null; try { mv = Rastro.chooseMove(B, s, level); } catch (err) {}
+        self.postMessage({id, mv});
+      };`;
+    worker = new Worker(URL.createObjectURL(new Blob([src], {type:'text/javascript'})));
+    worker.onmessage = e => { const r = pending.get(e.data.id); if (r){ pending.delete(e.data.id); r(e.data.mv); } };
+  }catch(e){ worker = null; }
+  return {
+    move(opts, s, level){
+      if (!worker) return new Promise(r => setTimeout(() => r(E.chooseMove(E.makeBoard(opts), s, level)), 30));
+      const id = ++seq;
+      return new Promise(r => { pending.set(id, r); worker.postMessage({id, opts, st:E.toJSON(s), level}); });
+    }
+  };
+})();
+
+/* ================= Tablero (SVG) ================= */
+const SZ = 10, W = Math.sqrt(3) * SZ;
+const View = (() => {
+  const svg = $('#board');
+  let B = null, cells = [], pieces = [], layers = {}, handlers = {};
+  const ctr = k => { const r = (k / B.N) | 0, c = k % B.N; return [W * (c + r / 2) + W * .9, 1.5 * SZ * r + SZ + 2.5]; };
+  const hexPts = (x, y, f = 1) => [0,1,2,3,4,5].map(i => { const a = Math.PI / 180 * (60 * i + 30); return [x + SZ * f * Math.cos(a), y + SZ * f * Math.sin(a)]; });
+  const ptsStr = a => a.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).join(' ');
+  const el = (tag, attrs = {}, parent) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+  function build(board){
+    B = board; svg.innerHTML = ''; cells = []; pieces = [];
+    const N = B.N, w = W * (N + (N - 1) / 2) + W * .8, h = 1.5 * SZ * (N - 1) + 2 * SZ + 5;
+    svg.setAttribute('viewBox', `0 0 ${w.toFixed(1)} ${h.toFixed(1)}`);
+    const defs = el('defs', {}, svg);
+    defs.innerHTML = `
+      ${TH.defs || ''}
+      <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy=".9" stdDeviation=".8" flood-color="#000" flood-opacity=".35"/></filter>
+      <filter id="lift" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="2.2" stdDeviation="1.4" flood-color="#000" flood-opacity=".35"/></filter>`;
+    for (const n of ['cells', 'edges', 'fx', 'last', 'hints', 'pieces', 'top']) layers[n] = el('g', {}, svg);
+    for (let k = 0; k < B.NN; k++){
+      if (B.types[k] === E.T.HOLE){ cells[k] = null; continue; }
+      const [x, y] = ctr(k), g = el('g', {class:'cell', 'data-k':k}, layers.cells);
+      el('polygon', {class:'base', points:ptsStr(hexPts(x, y))}, g);
+      if (B.types[k] === E.T.ROCK){
+        g.classList.add('rock');
+        [[-.25,-.2,.16],[.2,.1,.2],[-.05,.32,.12]].forEach(([dx,dy,r]) => el('circle', {cx:x+dx*SZ, cy:y+dy*SZ, r:r*SZ, fill:'#6d675e'}, g));
+      } else {
+        if (TH.deco) TH.deco(g, x, y, el);
+        el('polygon', {class:'seal', points:ptsStr(hexPts(x, y, .5)), pathLength:40}, g);
+        if (B.types[k] === E.T.SEAL){
+          const a = el('g', {class:'anchor'}, g);
+          el('circle', {cx:x, cy:y - SZ * .32, r:SZ * .1}, a);
+          el('path', {d:`M${x} ${y - SZ * .22}V${y + SZ * .36}M${x - SZ * .3} ${y + SZ * .14}Q${x} ${y + SZ * .5} ${x + SZ * .3} ${y + SZ * .14}M${x - SZ * .18} ${y}H${x + SZ * .18}`}, a);
+        }
+      }
+      g.addEventListener('click', () => handlers.cell && handlers.cell(k));
+      g.addEventListener('pointerenter', () => handlers.hover && handlers.hover(k));
+      g.addEventListener('pointerleave', () => handlers.hover && handlers.hover(-1));
+      cells[k] = g;
+    }
+    // bordes de cada jugador
+    const edge = (k, i, j, col) => { if (!cells[k] || B.types[k] === E.T.ROCK) return; const p = hexPts(...ctr(k)); el('line', {x1:p[i][0], y1:p[i][1], x2:p[j][0], y2:p[j][1], stroke:col, 'stroke-width':1.7, 'stroke-linecap':'round'}, layers.edges); };
+    for (let i = 0; i < N; i++){
+      edge(i, 3, 4, CVAR[1]); edge(i, 4, 5, CVAR[1]);
+      edge((N - 1) * N + i, 0, 1, CVAR[1]); edge((N - 1) * N + i, 1, 2, CVAR[1]);
+      edge(i * N, 2, 3, CVAR[2]); edge(i * N + N - 1, 5, 0, CVAR[2]);
+    }
+    for (let i = 0; i < E.NPIECES; i++){
+      const g = el('g', {class:'piece', 'data-i':i}, layers.pieces);
+      g.style.opacity = 0;
+      el('circle', {class:'lock', r:SZ * .78, cx:0, cy:0, style:'display:none'}, g);
+      const body = el('g', {class:'body'}, g);
+      TH.piece(body, el);
+      g.addEventListener('click', e => { e.stopPropagation(); handlers.piece && handlers.piece(i); });
+      pieces[i] = g;
+    }
+  }
+  const setPos = (g, k) => { const [x, y] = ctr(k); g.style.transform = `translate(${x}px,${y}px)`; g.dataset.k = k; };
+
+  // Dibuja un estado sin animación
+  function sync(s, ui = {}){
+    for (let k = 0; k < B.NN; k++){ const g = cells[k]; if (!g) continue; g.setAttribute('class', 'cell v' + s.m[k] + (B.types[k] === E.T.ROCK ? ' rock' : '')); }
+    s.p.forEach((k, i) => {
+      const g = pieces[i];
+      if (k < 0){ g.style.opacity = 0; g.style.pointerEvents = 'none'; return; }
+      g.style.opacity = 1; g.style.pointerEvents = ''; setPos(g, k);
+      const lock = i === s.locked && !s.over && s.toPlace === 0;
+      g.querySelector('.lock').style.display = lock ? '' : 'none';
+      g.classList.toggle('sel', ui.selected === i);
+      g.classList.toggle('hint', ui.hint === i);
+      g.classList.toggle('dim', !!(ui.dim && ui.dim.has(i)));
+      g.querySelector('.stone').setAttribute('filter', ui.selected === i ? 'url(#lift)' : 'url(#shadow)');
+    });
+    layers.hints.innerHTML = '';
+    if (ui.targets) ui.targets.forEach(k => { const [x, y] = ctr(k); el('circle', {class:'destdot', cx:x, cy:y, r:SZ * .17}, layers.hints); });
+    for (let k = 0; k < B.NN; k++) if (cells[k]) cells[k].classList.toggle('target', !!(ui.targets && ui.targets.includes(k)));
+    layers.last.innerHTML = '';
+    if (ui.last && ui.last.from >= 0 && ui.last.to >= 0){ const [a, b] = ctr(ui.last.from), [c, d] = ctr(ui.last.to); el('line', {class:'lastline', x1:a, y1:b, x2:c, y2:d}, layers.last); }
+    if (!ui.keepTop) layers.top.innerHTML = '';
+  }
+  function ghost(from, to, pl){
+    layers.fx.querySelectorAll('.ghost').forEach(n => n.remove());
+    if (from < 0 || to < 0) return;
+    const [a, b] = ctr(from), [c, d] = ctr(to);
+    el('polygon', {class:'ghost ghostpaint', points:ptsStr(hexPts(a, b, .62)), fill:CVAR[pl]}, layers.fx);
+    el('line', {class:'ghost ghostline', x1:a, y1:b, x2:c, y2:d, stroke:CVAR[pl]}, layers.fx);
+  }
+  function ripple(k, pl, sealed){
+    if (reduceMotion) return;
+    const [x, y] = ctr(k);
+    const p = el('polygon', {points:ptsStr(hexPts(x, y)), fill:'none', stroke:CVAR[pl], 'stroke-width':1.2}, layers.fx);
+    p.style.transformOrigin = `${x}px ${y}px`;
+    p.animate([{transform:'scale(.7)', opacity:.9}, {transform:'scale(1.7)', opacity:0}], {duration:sealed ? 750 : 520, easing:'cubic-bezier(.22,.8,.3,1)'}).onfinish = () => p.remove();
+    const cellG = cells[k];
+    cellG.querySelector('.base').animate([{filter:'brightness(1.35)'}, {filter:'brightness(1)'}], {duration:sealed ? 700 : 380});
+    if (sealed){
+      const r = el('polygon', {points:ptsStr(hexPts(x, y, .5)), fill:'#fff', opacity:.0}, layers.fx);
+      r.style.transformOrigin = `${x}px ${y}px`;
+      r.animate([{opacity:.85, transform:'scale(.2) rotate(-60deg)'}, {opacity:0, transform:'scale(1.6) rotate(0deg)'}], {duration:700, easing:'ease-out'}).onfinish = () => r.remove();
+    }
+  }
+  async function slide(i, from, to){
+    const g = pieces[i], [x0, y0] = ctr(from), [x1, y1] = ctr(to);
+    const n = Math.round(Math.hypot(x1 - x0, y1 - y0) / W);
+    const dur = reduceMotion ? 1 : 170 + 75 * n;
+    Sound.play('slide', dur);
+    const lift = g.querySelector('.body');
+    lift.animate([{transform:'scale(1)'}, {transform:'scale(1.12)', offset:.25}, {transform:'scale(1.1)', offset:.8}, {transform:'scale(1)'}], {duration:dur});
+    const a = g.animate([{transform:`translate(${x0}px,${y0}px)`}, {transform:`translate(${x1}px,${y1}px)`}], {duration:dur, easing:'cubic-bezier(.3,.0,.2,1)'});
+    setPos(g, to);
+    await a.finished.catch(() => {});
+    Sound.play('land');
+  }
+  async function drop(i, k){
+    const g = pieces[i]; setPos(g, k); g.style.opacity = 1; g.style.pointerEvents = '';
+    const [x, y] = ctr(k);
+    Sound.play('place');
+    if (reduceMotion) return;
+    await g.animate([{transform:`translate(${x}px,${y - 6}px) scale(1.35)`, opacity:0}, {transform:`translate(${x}px,${y}px) scale(1)`, opacity:1}], {duration:320, easing:'cubic-bezier(.3,1.4,.5,1)'}).finished.catch(() => {});
+  }
+  async function vanish(i){
+    const g = pieces[i], k = +g.dataset.k, [x, y] = ctr(k);
+    Sound.play('remove');
+    if (!reduceMotion) await g.animate([{transform:`translate(${x}px,${y}px) scale(1)`, opacity:1}, {transform:`translate(${x}px,${y - 4}px) scale(.4)`, opacity:0}], {duration:380, easing:'ease-in'}).finished.catch(() => {});
+    g.style.opacity = 0;
+  }
+  function paint(k, s, pl, sealed){
+    const g = cells[k]; if (!g) return;
+    g.setAttribute('class', 'cell v' + s.m[k]);
+    ripple(k, pl, sealed);
+    Sound.play('paint', pl);
+    if (sealed) setTimeout(() => Sound.play('seal', pl), 120);
+  }
+  async function winAnim(path, pl){
+    layers.top.innerHTML = '';
+    if (!path.length) return;
+    const d = path.map((k, i) => { const [x, y] = ctr(k); return (i ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2); }).join(' ');
+    const line = el('path', {class:'winline', d, stroke:pl === 1 ? 'var(--red-ink)' : 'var(--blue-ink)'}, layers.top);
+    const len = line.getTotalLength();
+    line.style.strokeDasharray = len; line.style.strokeDashoffset = len;
+    if (!reduceMotion) line.animate([{strokeDashoffset:len}, {strokeDashoffset:0}], {duration:Math.min(1400, 120 * path.length), easing:'ease-in-out', fill:'forwards'});
+    else line.style.strokeDashoffset = 0;
+    path.forEach((k, i) => setTimeout(() => {
+      const [x, y] = ctr(k), b = cells[k].querySelector('.base');
+      b.style.transformOrigin = `${x}px ${y}px`;
+      if (!reduceMotion) b.animate([{transform:'scale(1)'}, {transform:'scale(1.12)'}, {transform:'scale(1)'}], {duration:360, easing:'ease-out'});
+    }, reduceMotion ? 0 : i * 110));
+    await sleep(Math.min(1400, 120 * path.length));
+  }
+  return { build, sync, ghost, slide, drop, vanish, paint, winAnim, on(h){ handlers = h; }, get B(){ return B; } };
+})();
+
+/* ================= Juego: estado y flujo ================= */
+const settings = Object.assign({ vs:'bot', human:1, level:2, N:7, shape:'clasico', specials:false, opening:'colocacion' }, store.get('settings', {}));
+let G = null;            // partida en curso
+let tab = 'play';
+let score = store.get('score', {you:0, bot:0, r:0, b:0});
+let starter = store.get('starter', 1);
+
+function boardOpts(extra = {}){
+  return Object.assign({ N:settings.N, shape:settings.shape, specials:settings.specials, opening:settings.opening, seed:Math.floor(Math.random() * 1e9), starter }, extra);
+}
+function newGame(opts){
+  const o = opts || boardOpts();
+  const B = E.makeBoard(o);
+  G = { opts:o, B, s:E.newState(B), hist:[], moves:[], sel:-1, busy:false, last:null, kind:'play', replay:null, hover:-1 };
+  hideBanner(); View.build(B); render(); maybeBot();
+}
+const isHumanTurn = () => {
+  if (!G || G.s.over) return false;
+  if (G.kind !== 'play') return G.s.turn === G.humanColor;
+  return settings.vs === 'hot' || G.s.turn === settings.human;
+};
+
+function phaseOf(s, moves){ if (s.over) return 'over'; if (!moves.length) return 'none'; return moves[0].t; }
+function render(){
+  const s = G.s, moves = E.legal(G.B, s), ph = phaseOf(s, moves);
+  let targets = null;
+  if (isHumanTurn() && !G.busy && G.replay == null){
+    if (ph === 'P' || ph === 'F') targets = moves.map(m => m.to);
+    else if (ph === 'S' && G.sel >= 0) targets = moves.filter(m => m.i === G.sel).map(m => m.to);
+  }
+  const dim = new Set();
+  if (ph === 'S') s.p.forEach((k, i) => { if (k >= 0 && i !== s.locked && !moves.some(m => m.i === i)) dim.add(i); });
+  View.sync(s, { selected:G.sel, targets, last:G.last, dim, hint:G.hint, keepTop:s.over });
+  renderStatus(ph);
+  renderBar();
+  renderSide();
+}
+function renderStatus(ph){
+  const s = G.s, st = $('#status');
+  if (G.replay != null){ st.innerHTML = L.st.replay(G.replay, G.moves.length); return; }
+  if (s.over){
+    st.innerHTML = s.winner ? `<span class="dot" style="background:${CVAR[s.winner]}"></span>${L.st.wins(NAME[s.winner])}${s.endByCount ? L.st.byCount : ''}` : L.st.draw;
+    return;
+  }
+  const who = `<span class="dot" style="background:${CVAR[s.turn]}"></span>`;
+  let txt;
+  if (G.kind === 'play' && settings.vs === 'bot' && !isHumanTurn()) txt = `${L.st.thinks(NAME[s.turn])}<span class="thinking"><i></i><i></i><i></i></span>`;
+  else {
+    const you = G.kind !== 'play' || settings.vs === 'bot' ? L.st.yourTurn : L.st.turnOf(NAME[s.turn]);
+    txt = ph === 'P' ? L.st.place(you, E.NPIECES - s.toPlace + 1, E.NPIECES)
+        : ph === 'R' ? L.st.remove(you)
+        : ph === 'F' ? L.st.fill(you)
+        : G.kind === 'play' && settings.vs === 'bot' ? L.st.yourTurnAs(NAME[s.turn]) : you;
+  }
+  st.innerHTML = who + txt;
+}
+
+async function doMove(mv, opts = {}){
+  if (!mv) return;
+  G.busy = true; G.sel = -1; G.hint = -1; View.ghost(-1, -1);
+  const prev = G.s, pl = prev.turn, next = E.apply(G.B, prev, mv);
+  G.hist.push(prev); G.moves.push(mv);
+  render(); // quita selección mientras anima
+  if (mv.t === 'S'){
+    const painted = next.info && next.info.painted >= 0;
+    if (painted) View.paint(mv.from, next, pl, next.info.sealed);
+    await View.slide(mv.i, mv.from, mv.to);
+    G.last = {from:mv.from, to:mv.to};
+  } else if (mv.t === 'P'){
+    await View.drop(mv.i, mv.to); G.last = null;
+  } else if (mv.t === 'R'){
+    if (next.info && next.info.painted >= 0) View.paint(mv.from, next, pl, next.info.sealed);
+    await View.vanish(mv.i); G.last = null;
+  } else if (mv.t === 'F'){
+    View.paint(mv.to, next, pl, next.info && next.info.sealed); await sleep(260); G.last = null;
+  }
+  G.s = next; G.busy = false;
+  if (next.over){ render(); await onGameOver(); }
+  else { render(); if (!opts.noBot) maybeBot(); }
+  if (G.after && !G.auto) await G.after(mv, next);
+}
+
+async function maybeBot(){
+  if (!G || G.kind !== 'play' || G.s.over || settings.vs !== 'bot' || isHumanTurn()) return;
+  const myGame = G; G.busy = true; render();
+  const t0 = performance.now();
+  const mv = await Bot.move(G.opts, G.s, settings.level);
+  const wait = 550 - (performance.now() - t0); if (wait > 0) await sleep(wait);
+  if (G !== myGame) return;
+  G.busy = false;
+  await doMove(mv);
+}
+
+async function onGameOver(){
+  const s = G.s;
+  if (G.kind === 'play'){
+    const path = E.winPath(G.B, s, s.winner);
+    if (settings.vs === 'bot'){ if (s.winner === settings.human){ score.you++; Sound.play('win'); } else { score.bot++; Sound.play('lose'); } }
+    else { if (s.winner === 1) score.r++; else score.b++; Sound.play('win'); }
+    store.set('score', score);
+    await View.winAnim(path, s.winner);
+    starter = 3 - starter; store.set('starter', starter); // la próxima empieza el otro
+    const mine = settings.vs === 'bot' && s.winner === settings.human;
+    showBanner(`<b>${settings.vs === 'bot' ? (mine ? L.ban.youWon : L.ban.botWins) : L.ban.wins(NAME[s.winner])}</b>
+      <span class="muted">${s.endByCount ? L.ban.byCount : L.ban.connected} · ${L.ban.moves(Math.ceil(G.moves.length / 2))}</span>
+      <div class="row"><button class="btn primary" data-act="again">${L.ban.again}</button><button class="btn" data-act="replay">${L.ban.replay}</button></div>`);
+  }
+  render();
+}
+function showBanner(html){ const b = $('#banner'); b.innerHTML = html; b.classList.add('show');
+  b.querySelectorAll('[data-act]').forEach(x => x.onclick = () => { hideBanner(); if (x.dataset.act === 'again') newGame(); if (x.dataset.act === 'replay') startReplay(); if (x.dataset.act === 'next') nextAfterBanner && nextAfterBanner(); }); }
+function hideBanner(){ $('#banner').classList.remove('show'); }
+let nextAfterBanner = null;
+
+/* --- Entrada del usuario --- */
+View.on({
+  piece(i){
+    if (!G || G.busy || G.replay != null || !isHumanTurn()) return;
+    const moves = E.legal(G.B, G.s), ph = phaseOf(G.s, moves);
+    if (ph === 'R'){ const m = moves.find(x => x.i === i); if (m) doMove(m); return; }
+    if (ph === 'P' || ph === 'F'){ return; }
+    if (i === G.s.locked){ Sound.play('error'); flash(L.st.locked(NAME[3 - G.s.turn])); return; }
+    if (!moves.some(m => m.i === i)){ Sound.play('error'); flash(L.st.stuck(TH.w.seal)); return; }
+    if (G.sel === i){ G.sel = -1; Sound.play('deselect'); } else { G.sel = i; Sound.play('select'); }
+    View.ghost(-1, -1); render();
+  },
+  cell(k){
+    if (!G || G.busy || G.replay != null || !isHumanTurn()) return;
+    const moves = E.legal(G.B, G.s), ph = phaseOf(G.s, moves);
+    if (ph === 'P' || ph === 'F'){ const m = moves.find(x => x.to === k); if (m) doMove(m); return; }
+    if (ph === 'S' && G.sel >= 0){
+      const m = moves.find(x => x.i === G.sel && x.to === k);
+      if (m) doMove(m); else { const pi = G.s.p.indexOf(k); if (pi >= 0) this.piece(pi); else { G.sel = -1; Sound.play('deselect'); View.ghost(-1, -1); render(); } }
+    } else { const pi = G.s.p.indexOf(k); if (pi >= 0) this.piece(pi); }
+  },
+  hover(k){
+    if (!G || G.busy || G.sel < 0 || !isHumanTurn()) return;
+    const m = E.legal(G.B, G.s).find(x => x.i === G.sel && x.to === k);
+    if (m) View.ghost(m.from, m.to, G.s.turn); else View.ghost(-1, -1);
+  }
+});
+let flashTimer = null;
+function flash(t){
+  const st = $('#status'); const old = st.innerHTML;
+  st.innerHTML = `<span class="muted" style="font-weight:500">${t}</span>`;
+  clearTimeout(flashTimer); flashTimer = setTimeout(() => { if (G) render(); }, 2200);
+}
+
+function undo(){
+  if (!G || G.busy || !G.hist.length) return;
+  hideBanner();
+  if (G.s.over && G.kind === 'play'){ if (settings.vs === 'bot'){ if (G.s.winner === settings.human) score.you--; else score.bot--; } else { if (G.s.winner === 1) score.r--; else score.b--; } store.set('score', score); starter = 3 - starter; store.set('starter', starter); }
+  do { G.s = G.hist.pop(); G.moves.pop(); } while (G.kind === 'play' && settings.vs === 'bot' && G.hist.length && !isHumanTurn());
+  const lm = G.moves[G.moves.length - 1]; G.last = lm && lm.t === 'S' ? {from:lm.from, to:lm.to} : null;
+  G.sel = -1; render();
+}
+
+/* --- Repetición --- */
+let replayTimer = null;
+function startReplay(){
+  G.replay = 0; G.replayStates = [E.newState(G.B)];
+  for (const mv of G.moves) G.replayStates.push(E.apply(G.B, G.replayStates[G.replayStates.length - 1], mv));
+  G.finalState = G.s; G.s = G.replayStates[0]; G.last = null; render();
+}
+async function replayStep(d){
+  if (G.busy) return;
+  const to = Math.max(0, Math.min(G.moves.length, G.replay + d));
+  if (to === G.replay) return;
+  if (d === 1){
+    const mv = G.moves[G.replay], prev = G.replayStates[G.replay], next = G.replayStates[to];
+    G.busy = true;
+    if (mv.t === 'S'){ if (next.info && next.info.painted >= 0) View.paint(mv.from, next, prev.turn, next.info.sealed); await View.slide(mv.i, mv.from, mv.to); G.last = {from:mv.from, to:mv.to}; }
+    else if (mv.t === 'P'){ await View.drop(mv.i, mv.to); G.last = null; }
+    else if (mv.t === 'R'){ if (next.info && next.info.painted >= 0) View.paint(mv.from, next, prev.turn, next.info.sealed); await View.vanish(mv.i); }
+    else View.paint(mv.to, next, prev.turn, next.info && next.info.sealed);
+    G.busy = false;
+  } else { const mv = G.moves[to - 1]; G.last = mv && mv.t === 'S' ? {from:mv.from, to:mv.to} : null; }
+  G.replay = to; G.s = G.replayStates[to]; render();
+  if (to === G.moves.length && G.s.over) View.winAnim(E.winPath(G.B, G.s, G.s.winner), G.s.winner);
+}
+function replayJump(to){ clearInterval(replayTimer); replayTimer = null; G.replay = to; G.s = G.replayStates[to]; const mv = G.moves[to - 1]; G.last = mv && mv.t === 'S' ? {from:mv.from, to:mv.to} : null; render(); }
+function replayPlay(){
+  if (replayTimer){ clearInterval(replayTimer); replayTimer = null; renderBar(); return; }
+  if (G.replay >= G.moves.length) replayJump(0);
+  replayTimer = setInterval(() => { if (G.replay >= G.moves.length){ clearInterval(replayTimer); replayTimer = null; renderBar(); return; } replayStep(1); }, 900);
+  renderBar();
+}
+function endReplay(){ clearInterval(replayTimer); replayTimer = null; G.replay = null; G.s = G.finalState; const mv = G.moves[G.moves.length - 1]; G.last = mv && mv.t === 'S' ? {from:mv.from, to:mv.to} : null; render(); View.winAnim(E.winPath(G.B, G.s, G.s.winner), G.s.winner); }
+
+/* --- Barra bajo el tablero --- */
+function renderBar(){
+  const bar = $('#bar');
+  if (G.replay != null){
+    bar.innerHTML = `<div class="replaybar">
+      <button class="btn" id="rb0" title="${L.bar.start}">|◀</button><button class="btn" id="rbp" title="${L.bar.back}">◀</button>
+      <button class="btn primary" id="rbplay">${replayTimer ? L.bar.pause : L.bar.play}</button>
+      <button class="btn" id="rbn" title="${L.bar.fwd}">▶</button><button class="btn" id="rbend" title="${L.bar.end}">▶|</button>
+      <input type="range" id="rbslider" min="0" max="${G.moves.length}" value="${G.replay}">
+      <button class="btn" id="rbexit">${L.bar.exit}</button></div>`;
+    $('#rb0').onclick = () => replayJump(0); $('#rbend').onclick = () => replayJump(G.moves.length);
+    $('#rbp').onclick = () => replayStep(-1); $('#rbn').onclick = () => replayStep(1);
+    $('#rbplay').onclick = replayPlay; $('#rbexit').onclick = endReplay;
+    $('#rbslider').oninput = e => replayJump(+e.target.value);
+    return;
+  }
+  if (G.kind === 'play'){
+    bar.innerHTML = `<button class="btn primary" id="bnew">${L.bar.newGame}</button><button class="btn" id="bundo" ${G.hist.length ? '' : 'disabled'}>${L.bar.undo}</button>
+      ${G.s.over ? `<button class="btn" id="brep">${L.bar.replay}</button>` : ''}
+      <span class="muted" style="margin-left:auto">${L.bar.started(NAME[G.opts.starter])}</span>`;
+    $('#bnew').onclick = () => newGame(); $('#bundo').onclick = undo;
+    if ($('#brep')) $('#brep').onclick = startReplay;
+  } else if (G.kind === 'puzzle'){
+    bar.innerHTML = `<button class="btn" id="bhint">${L.bar.hint}</button><button class="btn" id="breset">${L.bar.reset}</button><button class="btn primary" id="bnext">${L.bar.next}</button>`;
+    $('#bhint').onclick = puzzleHint; $('#breset').onclick = () => openPuzzle(G.pidx); $('#bnext').onclick = () => openPuzzle((G.pidx + 1) % PUZZLES.length);
+  } else if (G.kind === 'tutorial'){
+    bar.innerHTML = `<button class="btn" id="treset">${L.bar.repeat}</button><button class="btn primary" id="tnext" ${G.done ? '' : 'disabled'}>${G.tidx === TUTORIAL.length - 1 ? L.bar.finish : L.bar.next}</button>`;
+    $('#treset').onclick = () => openTutorial(G.tidx);
+    $('#tnext').onclick = () => G.tidx === TUTORIAL.length - 1 ? finishTutorial() : openTutorial(G.tidx + 1);
+  }
+}
+
+/* --- Panel lateral --- */
+function seg(name, opts, cur){ return `<div class="seg" data-name="${name}">${opts.map(([v, l]) => `<button data-v="${v}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`; }
+function renderSide(){
+  const side = $('#side');
+  if (tab === 'play'){
+    const S = L.side;
+    side.innerHTML = `<div class="card"><h2>${S.game}</h2>
+      <div class="field"><span>${S.rival}</span>${seg('vs', [['bot', S.bot], ['hot', S.two]], settings.vs)}</div>
+      ${settings.vs === 'bot' ? `<div class="field"><span>${S.color}</span>${seg('human', [[1, NAME[1]], [2, NAME[2]]], settings.human)}</div>
+      <div class="field"><span>${S.level}</span>${seg('level', S.levels.map((l, i) => [i + 1, l]), settings.level)}</div>` : ''}
+      <div class="field"><span>${S.theme}</span>${seg('theme', Object.keys(THEMES).map(id => [id, L.themes[id].name]), TH.id)}</div>
+      <h3>${S.board}</h3>
+      <div class="field"><span>${S.size}</span>${seg('N', [[7, S.s7], [9, S.s9]], settings.N)}</div>
+      <div class="field"><span>${S.shape}</span>${seg('shape', Object.entries(S.shapes), settings.shape)}</div>
+      <div class="field"><span>${S.specials}</span>${seg('specials', [[false, S.no], [true, S.rocks]], settings.specials)}</div>
+      <div class="field"><span>${S.opening}</span>${seg('opening', [['colocacion', S.placement], ['fija', S.fixed]], settings.opening)}</div>
+      <p class="muted" style="margin:8px 0 0">${S.note}</p>
+      <div class="score">${settings.vs === 'bot' ? `<span>${S.you} ${score.you}</span><span>${S.botScore} ${score.bot}</span>` : `<span>${NAME[1]} ${score.r}</span><span>${NAME[2]} ${score.b}</span>`}</div>
+    </div>
+    <div class="card rules"><h2>${S.reminder}</h2>
+      <p style="margin:0">${S.remind(TH.w)}</p>
+      ${settings.specials ? `<p class="muted" style="margin:8px 0 0">${S.specNote(TH.w)}</p>` : ''}
+      ${settings.shape !== 'clasico' ? `<p class="muted" style="margin:8px 0 0">${S.holes}</p>` : ''}
+    </div>`;
+    side.querySelectorAll('.seg').forEach(sg => sg.querySelectorAll('button').forEach(b => b.onclick = () => {
+      const name = sg.dataset.name; let v = b.dataset.v;
+      if (name === 'theme'){ TH = THEMES[v]; store.set('theme', v); applyTheme(); View.build(G.B); render(); if (G.s.over) View.winAnim(E.winPath(G.B, G.s, G.s.winner), G.s.winner); return; }
+      if (name === 'human' || name === 'level' || name === 'N') v = +v; if (name === 'specials') v = v === 'true';
+      settings[name] = v; store.set('settings', settings);
+      if (name === 'level' || name === 'vs' && false){ renderSide(); return; }
+      newGame();
+    }));
+  } else if (tab === 'puzzles'){
+    const solved = store.get('solved', []);
+    const pz = PUZZLES[G.pidx];
+    side.innerHTML = `<div class="card"><h2>${L.pz.title(G.pidx + 1)}</h2>
+      <p style="margin:0 0 6px">${L.pz.plays(`<b style="color:${CVAR[pz.turn]}">${NAME[pz.turn]}</b>`)} <b>${L.pz.win2}</b>${L.pz.anyway}</p>
+      <p class="muted" style="margin:0">${L.pz.tip}</p>
+      ${G.msg ? `<div class="msg ${G.msg.cls}">${G.msg.text}</div>` : ''}
+      <h3>${L.pz.count(solved.length, PUZZLES.length)}</h3>
+      <div class="pgrid">${PUZZLES.map((_, i) => `<button data-p="${i}" class="${solved.includes(i) ? 'done' : ''} ${i === G.pidx ? 'on' : ''}">${i + 1}</button>`).join('')}</div>
+      <p class="muted" style="margin:0">${L.pz.note}</p></div>`;
+    side.querySelectorAll('[data-p]').forEach(b => b.onclick = () => openPuzzle(+b.dataset.p));
+  } else if (tab === 'tutorial'){
+    const st = Object.assign(TUTORIAL[G.tidx], tutText()[TUTORIAL[G.tidx].id]);
+    side.innerHTML = `<div class="card"><div class="steps">${TUTORIAL.map((_, i) => `<i class="${i <= G.tidx ? 'on' : ''}"></i>`).join('')}</div>
+      <h2>${st.title}</h2><div class="rules">${st.text}</div>
+      ${G.msg ? `<div class="msg ${G.msg.cls}">${G.msg.text}</div>` : ''}</div>`;
+  } else if (tab === 'rules'){
+    side.innerHTML = `<div class="card rules">${L.rules(NAME[1], NAME[2], TH.w)}</div>`;
+  }
+}
+
+/* --- Pestañas --- */
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  if (G && G.busy) return;
+  clearInterval(replayTimer); replayTimer = null;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  const t = b.dataset.tab; hideBanner();
+  if (t === 'rules'){ tab = 'rules'; if (!G || G.kind !== 'play'){ tab = 'play'; newGame(); tab = 'rules'; } renderSide(); return; }
+  tab = t;
+  if (t === 'play') newGame();
+  if (t === 'puzzles') openPuzzle(store.get('lastPuzzle', 0));
+  if (t === 'tutorial') openTutorial(0);
+});
+
+/* ================= Problemas ================= */
+function openPuzzle(i){
+  store.set('lastPuzzle', i);
+  const pz = PUZZLES[i], B = E.makeBoard({N:7});
+  G = { opts:{N:7}, B, s:E.fromJSON({m:pz.m, p:pz.p, locked:pz.locked, turn:pz.turn}), hist:[], moves:[], sel:-1, busy:false, last:null, kind:'puzzle', pidx:i, humanColor:pz.turn, step:0, msg:null, hint:-1 };
+  G.after = puzzleAfter;
+  hideBanner(); View.build(B); render();
+}
+function puzzleHint(){ if (G.busy || G.step > 0) return; G.hint = PUZZLES[G.pidx].sol.i; render(); }
+async function puzzleAfter(mv, s){
+  const pz = PUZZLES[G.pidx];
+  if (G.s.turn !== G.humanColor && !s.over){
+    if (G.step === 0){
+      const right = mv.i === pz.sol.i && mv.to === pz.sol.to;
+      G.step = 1;
+      G.msg = right ? {cls:'ok', text:L.pz.good} : {cls:'bad', text:L.pz.hmm};
+      render(); await sleep(700);
+      const reply = E.bestDefense(G.B, G.s);
+      G.auto = true; await doMove(reply, {noBot:true}); G.auto = false;
+      if (!G.s.over){ G.msg = right ? {cls:'ok', text:L.pz.finish} : {cls:'bad', text:L.pz.defended}; G.failed = !right; render(); }
+      else { G.msg = {cls:'bad', text:L.pz.oppWon}; render(); }
+    }
+  }
+  if (s.over && s.winner === G.humanColor && G.kind === 'puzzle'){
+    const solved = store.get('solved', []); if (!solved.includes(G.pidx)){ solved.push(G.pidx); store.set('solved', solved); }
+    Sound.play('win'); await View.winAnim(E.winPath(G.B, s, s.winner), s.winner);
+    G.msg = {cls:'ok', text:L.pz.solved}; render();
+  } else if (G.step === 1 && G.s.turn !== G.humanColor && G.moves.length === 3 && !s.over){
+    G.msg = {cls:'bad', text:L.pz.notWin}; render();
+  }
+}
+// En problemas, quien no es el humano no lo mueve el bot normal
+const _maybeBot = maybeBot;
+
+/* ================= Tutorial ================= */
+const tutText = () => L.tut(NAME[1], NAME[2], TH.w);
+function openTutorial(i){
+  const st = Object.assign(TUTORIAL[i], tutText()[TUTORIAL[i].id]), B = E.makeBoard({N:5});
+  G = { opts:{N:5}, B, s:E.fromJSON({m:st.m, p:st.p, locked:st.locked, turn:st.turn}), hist:[], moves:[], sel:-1, busy:false, last:null, kind:'tutorial', tidx:i, humanColor:st.turn, done:false, msg:null, hint:-1 };
+  if (st.id === 'bloqueo') G.last = {from:6, to:5};
+  G.after = tutorialAfter;
+  hideBanner(); View.build(B); render();
+}
+async function tutorialAfter(mv, s){
+  const st = TUTORIAL[G.tidx]; if (G.done) return;
+  let ok = false, fail = false;
+  if (st.goal === 'slide') ok = mv.t === 'S';
+  if (st.goal === 'win') { ok = s.over && s.winner === G.humanColor; fail = !ok; }
+  if (st.goal === 'seal') { ok = !!(s.info && s.info.sealed); fail = !ok; }
+  if (st.goal === 'remove') ok = mv.t === 'R';
+  if (st.goal === 'win2'){
+    if (s.over && s.winner === G.humanColor) ok = true;
+    else if (G.moves.length === 1){
+      await sleep(600); const reply = E.bestDefense(G.B, G.s); G.auto = true; await doMove(reply, {noBot:true}); G.auto = false;
+      if (!E.winsNow(G.B, G.s).length){ fail = true; } else { G.msg = {cls:'ok', text:L.tutReserve(NAME[2])}; render(); }
+    } else fail = true;
+  }
+  if (ok){ G.done = true; G.msg = {cls:'ok', text:st.ok}; Sound.play('ok'); if (s.over) await View.winAnim(E.winPath(G.B, s, s.winner), s.winner); render(); }
+  else if (fail){ G.msg = {cls:'bad', text:L.tutAlmost}; G.s = Object.assign(E.clone(G.s), {over:true}); render(); }
+}
+function finishTutorial(){
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'play'));
+  tab = 'play'; settings.vs = 'bot'; settings.level = 1; settings.N = 7; settings.shape = 'clasico'; settings.specials = false; store.set('settings', settings);
+  newGame();
+}
+
+/* ================= Arranque ================= */
+document.querySelectorAll('#langSeg button').forEach(b => b.onclick = () => {
+  L = LANGS[b.dataset.v]; store.set('lang', L.code); applyLang(); View.build(G.B); render();
+  if (G.s.over) View.winAnim(E.winPath(G.B, G.s, G.s.winner), G.s.winner);
+  if ($('#banner').classList.contains('show') && G.kind === 'play' && G.s.over){ hideBanner(); }
+});
+applyLang();
+newGame();
+window.__app = { get G(){ return G; }, E, newGame, settings, openPuzzle, openTutorial, doMove };
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
