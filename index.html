@@ -62,6 +62,15 @@
       <span class="play" data-t="play"></span>
     </div>
   </a>
+  <a class="game" href="juegos/farol/" style="margin-top:14px">
+    <img src="juegos/farol/icons/og.png" alt="Farol">
+    <div class="txt">
+      <h3>Farol</h3><div class="sub" data-t="sub2"></div>
+      <p data-t="desc2"></p>
+      <div class="tags" data-t="tags2"></div>
+      <span class="play" data-t="play"></span>
+    </div>
+  </a>
   <div class="soon" data-t="soon"></div>
   <footer data-t="foot"></footer>
 </div>
@@ -69,19 +78,18 @@
 const T = {
   es:{ h1:'IA, automatización y juegos hechos con IA', lead:'Hago vídeos sobre cómo usar la IA para trabajar menos y crear más. Aquí dejo lo que voy construyendo, empezando por los juegos.',
     games:'Juegos', sub:'Trail · juego de mesa abstracto', desc:'Las fichas no son de nadie: mueves cualquiera, dejas tu huella y tienes que unir tus dos lados. Diseñado y equilibrado con bots que jugaron miles de partidas.',
-    tags:['Contra el bot o a dos', 'Tutorial y problemas', '5 temas', 'ES · EN · GL', 'Funciona sin conexión'], play:'Jugar ahora', soon:'Próximamente más juegos.', foot:'Hecho con IA, en Ferrol.' },
+    tags:['Contra el bot o a dos', 'Tutorial y problemas', '5 temas', 'ES · EN · FR · DE', 'Funciona sin conexión'], sub2:'Bluff · los dos jugáis a la vez', desc2:'Elegís casilla en secreto y se revela a la vez. Si coincidís, se la queda quien tiene la corona. Gana con 5 en línea o 4 capturas: adivina dónde va el otro y no seas previsible.', tags2:['Contra el bot o a dos', 'Tutorial', '5 temas', 'ES · EN · FR · DE', 'Funciona sin conexión'], play:'Jugar ahora', soon:'Próximamente más juegos.', foot:'Hecho con IA, en Ferrol.' },
   en:{ h1:'AI, automation and games made with AI', lead:'I make videos about using AI to work less and build more. This is where I put what I build, starting with games.',
     games:'Games', sub:'Rastro · an abstract board game', desc:'Pieces belong to nobody: move any of them, leave your trail and connect your two sides. Designed and balanced with bots that played thousands of games.',
-    tags:['Vs bot or 2 players', 'Tutorial and puzzles', '5 themes', 'ES · EN · GL', 'Works offline'], play:'Play now', soon:'More games coming soon.', foot:'Made with AI, in Ferrol (Spain).' },
+    tags:['Vs bot or 2 players', 'Tutorial and puzzles', '5 themes', 'ES · EN · FR · DE', 'Works offline'], sub2:'Bluff · you both move at once', desc2:'Choose a cell in secret and reveal at once. Pick the same one and whoever holds the crown gets it. Win with 5 in a row or 4 captures: guess where the other goes, and don\'t be predictable.', tags2:['Vs bot or 2 players', 'Tutorial', '5 themes', 'ES · EN · FR · DE', 'Works offline'], play:'Play now', soon:'More games coming soon.', foot:'Made with AI, in Ferrol (Spain).' },
 };
 function set(l){
   let saved = l; try{ if (!saved) saved = localStorage.getItem('rastro.lang'); }catch(e){}
   saved = saved && saved.replace(/"/g, '');
   const k = saved === 'en' ? 'en' : saved === 'es' || saved === 'gl' ? 'es' : ((navigator.language || 'en').toLowerCase().match(/^(es|gl|ca|eu)/) ? 'es' : 'en');
   const d = T[k]; document.documentElement.lang = k;
-  document.querySelectorAll('[data-t]').forEach(e => { const v = d[e.dataset.t]; e.innerHTML = Array.isArray(v) ? v.map(x => `<span>${x}</span>`).join('') : v; });
-  document.querySelector('.game .sub').textContent = d.sub;
-  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.l === k));
+  document.querySelectorAll('[data-t]').forEach(e => { const v = d[e.dataset.t]; if (v == null) return; e.innerHTML = Array.isArray(v) ? v.map(x => `<span>${x}</span>`).join('') : v; });
+    document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.l === k));
   if (l) try{ localStorage.setItem('rastro.lang', JSON.stringify(l)); }catch(e){}
 }
 document.querySelectorAll('.lang button').forEach(b => b.onclick = () => set(b.dataset.l));

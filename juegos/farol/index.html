@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farol · Bluff</title>
+<meta name="description" content="Farol (Bluff): los dos jugáis a la vez. Elegís casilla en secreto y se revela a la vez.">
+<meta name="theme-color" content="#f1eee8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Farol">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Farol · Bluff">
+<meta property="og:description" content="Los dos jugáis a la vez: elegís casilla en secreto y se revela a la vez. ¿Adivinas dónde va el otro?">
+<meta property="og:image" content="https://miguelgdoval.github.io/juegos/farol/icons/og.png">
+<meta property="og:url" content="https://miguelgdoval.github.io/juegos/farol/">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f1eee8;--paper:#fffdf9;--ink:#23211d;--muted:#78716a;--line:#e2dacc;--cell:#ebe4d6;--grid:#d6cab5;--red:#d65746;--blue:#3d72c6;--gold:#e0a82e;--ease:cubic-bezier(.22,.8,.3,1)}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;-webkit-font-smoothing:antialiased}
+  button{font:inherit}
+  .wrap{max-width:1040px;margin:0 auto;padding:18px 16px 40px}
+  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{display:flex;align-items:baseline;gap:10px;margin-right:auto}
+  .brand h1{font-family:Fraunces,Georgia,serif;font-size:30px;margin:0;letter-spacing:-.5px}
+  .brand span{color:var(--muted);font-size:13px}
+  nav{display:flex;background:var(--nav);border-radius:999px;padding:3px}
+  nav button{border:0;background:transparent;padding:7px 14px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer}
+  nav button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .iconbtn{border:1px solid var(--line);background:var(--paper);border-radius:999px;width:38px;height:38px;display:grid;place-items:center;cursor:pointer;color:var(--ink)}
+  .iconbtn svg{width:18px;height:18px}
+  .seg{display:flex;flex-wrap:wrap;gap:4px}
+  .seg button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:13px;cursor:pointer;color:var(--ink)}
+  .seg button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  #langSeg button{padding:4px 8px;font-size:12px}
+  main{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:22px;align-items:start}
+  @media (max-width:860px){main{grid-template-columns:minmax(0,1fr)}}
+  @media (max-width:600px){.wrap{padding:12px 10px 30px}header{gap:8px;margin-bottom:10px}.brand span{display:none}.brand h1{font-size:26px}nav{order:3;width:100%}nav button{flex:1;padding:8px 6px}#soundBtn{order:2;width:34px;height:34px}.stage{padding:10px 6px 8px}}
+  .stage{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:12px;position:relative}
+  .players{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:0 2px 8px}
+  .pl{display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:999px;padding:4px 10px 4px 5px;font-size:13px;font-weight:600;background:#fff;transition:box-shadow .3s}
+  .pl .dot{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 -2px 0 rgba(0,0,0,.15)}
+  .pl .crown{width:18px;height:18px;color:var(--gold);opacity:0;transform:scale(.4);transition:opacity .35s,transform .45s var(--ease)}
+  .pl.has .crown{opacity:1;transform:scale(1)}
+  .pl.has{box-shadow:0 0 0 2px rgba(224,168,46,.45)}
+  .pl .caps{color:var(--muted);font-weight:500}
+  #status{font-weight:600;font-size:16px;min-height:26px;padding:0 4px 6px}
+  .thinking{display:inline-flex;gap:3px;margin-left:4px}.thinking i{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}.thinking i:nth-child(2){animation-delay:.15s}.thinking i:nth-child(3){animation-delay:.3s}
+  @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+  svg#board{width:100%;height:auto;display:block;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .cell{fill:var(--cell);stroke:var(--grid);stroke-width:.55;cursor:pointer;transition:fill .15s}
+  .cell:hover{fill:#e3dac9}
+  .cell.full{cursor:default}.cell.full:hover{fill:var(--cell)}
+  .log{font-size:13.5px;color:#57514a;min-height:22px;padding:6px 4px 0;line-height:1.45}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 2px 2px}
+  .btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:9px 15px;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s}
+  .btn:hover{background:#f4efe6}.btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .btn[disabled]{opacity:.35;cursor:default}
+  .muted{color:var(--muted);font-size:13px}
+  aside .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px;font-size:14px;line-height:1.55}
+  aside h2{font-family:Fraunces,Georgia,serif;font-size:19px;margin:0 0 10px}
+  aside h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+  .field{display:grid;grid-template-columns:100px 1fr;align-items:center;gap:8px;margin-bottom:8px}
+  .rules ol{padding-left:18px;margin:6px 0 10px}.rules li{margin-bottom:6px}
+  .msg{border-radius:12px;padding:10px 12px;margin:10px 0 0;background:#f4efe6}.msg.ok{background:#e8f2e4;color:#2f5a23}.msg.bad{background:#fbe9e5;color:#8a3022}
+  .steps{display:flex;gap:5px;margin:4px 0 12px}.steps i{height:4px;flex:1;border-radius:4px;background:var(--line)}.steps i.on{background:var(--ink)}
+  .cover{position:absolute;inset:0;background:rgba(35,33,29,.94);border-radius:18px;display:none;place-items:center;text-align:center;color:#fff;z-index:5;padding:20px}
+  .cover.show{display:grid;animation:fade .25s}
+  .cover b{font-family:Fraunces,Georgia,serif;font-size:26px;display:block;margin-bottom:8px}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .banner{display:none;text-align:center;border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:8px 2px 4px;background:#faf6ef}
+  .banner.show{display:block;animation:up .35s var(--ease)}
+  @keyframes up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .banner b{font-family:Fraunces,Georgia,serif;font-size:21px;display:block;margin-bottom:2px}
+  .banner .row{display:flex;gap:8px;justify-content:center;margin-top:10px}
+  .replaybar{display:flex;align-items:center;gap:6px;width:100%}.replaybar input{flex:1}
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>Farol</h1><span></span></div>
+    <div class="seg" id="langSeg"><button data-v="es">ES</button><button data-v="en">EN</button><button data-v="fr">FR</button><button data-v="de">DE</button></div>
+    <nav id="tabs"><button data-tab="play" class="on"></button><button data-tab="tutorial"></button><button data-tab="rules"></button></nav>
+    <button class="iconbtn" id="soundBtn"></button>
+  </header>
+  <main>
+    <section class="stage">
+      <div class="players" id="players"></div>
+      <div id="status"></div>
+      <svg id="board"></svg>
+      <div class="log" id="log"></div>
+      <div class="banner" id="banner"></div>
+      <div class="bar" id="bar"></div>
+      <div class="cover" id="cover"><div><b id="coverTitle"></b><div id="coverText" style="opacity:.8;margin-bottom:16px"></div><button class="btn" id="coverBtn"></button></div></div>
+    </section>
+    <aside id="side"></aside>
+  </main>
+</div>
+<script id="engine">
+// Farol — motor. Funciona en el navegador, en un Web Worker y en Node.
+(function (root) {
+  const N = 9, K = 5, NN = N * N, CAPWIN = 4, TV = 6;
+  const wins = [];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) for (const [dr, dc] of [[0, 1], [1, 0], [1, 1], [1, -1]]) {
+    const w = []; for (let i = 0; i < K; i++) { const a = r + dr * i, b = c + dc * i; if (a < 0 || a >= N || b < 0 || b >= N) break; w.push(a * N + b); }
+    if (w.length === K) wins.push(w);
+  }
+  const cellWins = Array.from({ length: NN }, () => []); wins.forEach((w, i) => w.forEach(k => cellWins[k].push(i)));
+  const D8 = [[0, 1], [1, 0], [1, 1], [1, -1], [0, -1], [-1, 0], [-1, -1], [-1, 1]];
+  const WT = [0, 1, 4, 16, 64, 256, 1024];
+
+  const newState = (h) => ({ m: new Int8Array(NN), cap: [0, 0, 0], h: h || 1, over: false, winner: 0, n: 0 });
+  const clone = s => ({ m: s.m.slice(), cap: s.cap.slice(), h: s.h, over: s.over, winner: s.winner, n: s.n });
+  const legal = s => { const o = []; for (let k = 0; k < NN; k++) if (!s.m[k]) o.push(k); return o; };
+  const lineOf = (m, p) => wins.find(w => w.every(k => m[k] === p)) || null;
+
+  // Captura: tu ficha + dos rivales seguidas + tu ficha → las dos rivales se retiran
+  function capturesFrom(m, k, p) {
+    const out = [], r = (k / N) | 0, c = k % N;
+    for (const [dr, dc] of D8) {
+      const a3 = r + 3 * dr, b3 = c + 3 * dc; if (a3 < 0 || a3 >= N || b3 < 0 || b3 >= N) continue;
+      const k1 = (r + dr) * N + c + dc, k2 = (r + 2 * dr) * N + c + 2 * dc, k3 = a3 * N + b3;
+      if (m[k1] === 3 - p && m[k2] === 3 - p && m[k3] === p) out.push(k1, k2);
+    }
+    return out;
+  }
+
+  // Resuelve un turno: a = casilla de Rojo, b = casilla de Azul
+  function resolve(s, a, b) {
+    const t = clone(s), clash = a === b, h0 = s.h; t.n++;
+    const placed = [];
+    if (clash) { t.m[a] = h0; placed.push([a, h0]); t.h = 3 - h0; }
+    else { t.m[a] = 1; t.m[b] = 2; placed.push([a, 1], [b, 2]); }
+    const removed = [];
+    for (const [k, p] of placed) { const cs = capturesFrom(t.m, k, p); if (cs.length) { t.cap[p] += cs.length / 2; for (const x of cs) removed.push([x, 3 - p]); } }
+    for (const [x] of removed) t.m[x] = 0;
+    let w1 = !!lineOf(t.m, 1) || t.cap[1] >= CAPWIN, w2 = !!lineOf(t.m, 2) || t.cap[2] >= CAPWIN;
+    if (w1 && w2) { if (h0 === 1) w2 = false; else w1 = false; } // empate: gana quien tenía la corona
+    if (w1 || w2) { t.over = true; t.winner = w1 ? 1 : 2; t.byCap = t.cap[t.winner] >= CAPWIN && !lineOf(t.m, t.winner); }
+    else if (!legal(t).length) { t.over = true; t.winner = 0; }
+    t.info = { a, b, clash, h0, removed };
+    return t;
+  }
+
+  // ---------- Bots ----------
+  function score(m, p) { let s = 0; for (const w of wins) { let n = 0, bad = false; for (const k of w) { const v = m[k]; if (v === p) n++; else if (v) { bad = true; break; } } if (!bad) s += WT[n]; } return s; }
+  function evalFor(t, p) {
+    if (t.over) return t.winner === p ? 1000 : t.winner ? -1000 : 0;
+    return score(t.m, p) - score(t.m, 3 - p) + TV * (t.h === p ? 1 : -1) + (t.cap[p] - t.cap[3 - p]) * 12;
+  }
+  function cellValue(s, k, p) {
+    let v = 0;
+    for (const wi of cellWins[k]) { let mine = 0, opp = 0; for (const x of wins[wi]) { const q = s.m[x]; if (q === p) mine++; else if (q === 3 - p) opp++; } if (!opp) v += WT[mine + 1]; if (!mine) v += WT[opp + 1] * .9; }
+    const t = s.m.slice(); t[k] = p; v += capturesFrom(t, k, p).length * 10; t[k] = 3 - p; v += capturesFrom(t, k, 3 - p).length * 9;
+    return v;
+  }
+  const cands = (s, p, k, rand) => legal(s).map(x => [cellValue(s, x, p) + rand() * .01, x]).sort((a, b) => b[0] - a[0]).slice(0, k).map(x => x[1]);
+  // Estrategia mixta (regret matching): impredecible a propósito
+  function mixed(s, k, iters, rand) {
+    const A = cands(s, 1, k, rand), B = cands(s, 2, k, rand);
+    const P = A.map(a => B.map(b => evalFor(resolve(s, a, b), 1)));
+    const n = A.length, q = B.length, rA = new Float64Array(n), rB = new Float64Array(q), sA = new Float64Array(n), sB = new Float64Array(q);
+    const st = r => { let t = 0; const o = Array.from(r, x => Math.max(0, x)); o.forEach(x => t += x); return t > 0 ? o.map(x => x / t) : o.map(() => 1 / o.length); };
+    for (let it = 0; it < iters; it++) {
+      const x = st(rA), y = st(rB);
+      for (let i = 0; i < n; i++) sA[i] += x[i]; for (let j = 0; j < q; j++) sB[j] += y[j];
+      const uA = A.map((_, i) => { let t = 0; for (let j = 0; j < q; j++) t += y[j] * P[i][j]; return t; }), vA = uA.reduce((t, u, i) => t + u * x[i], 0);
+      const uB = B.map((_, j) => { let t = 0; for (let i = 0; i < n; i++) t -= x[i] * P[i][j]; return t; }), vB = uB.reduce((t, u, j) => t + u * y[j], 0);
+      for (let i = 0; i < n; i++) rA[i] += uA[i] - vA; for (let j = 0; j < q; j++) rB[j] += uB[j] - vB;
+    }
+    const nm = a => { const t = a.reduce((x, y) => x + y, 0); return Array.from(a, x => x / t); };
+    return { A, B, pA: nm(sA), pB: nm(sB) };
+  }
+  const LEVELS = { 1: { k: 3 }, 2: { k: 6, it: 150 }, 3: { k: 14, it: 500 } };
+  function chooseMove(s, p, level, rand) {
+    rand = rand || Math.random;
+    const L = LEVELS[level] || LEVELS[2];
+    if (!L.it) { const c = cands(s, p, L.k, rand); return c[Math.floor(rand() * c.length)]; }
+    const e = mixed(s, L.k, L.it, rand), xs = p === 1 ? e.A : e.B, ps = p === 1 ? e.pA : e.pB;
+    let r = rand(); for (let i = 0; i < xs.length; i++) { r -= ps[i]; if (r <= 0) return xs[i]; } return xs[xs.length - 1];
+  }
+  const toJSON = s => ({ m: Array.from(s.m), cap: s.cap.slice(), h: s.h, n: s.n });
+  const fromJSON = j => ({ m: Int8Array.from(j.m), cap: (j.cap || [0, 0, 0]).slice(), h: j.h || 1, over: false, winner: 0, n: j.n || 0 });
+
+  const API = { N, K, NN, CAPWIN, newState, clone, legal, resolve, lineOf, capturesFrom, chooseMove, toJSON, fromJSON, evalFor };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Farol = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+'use strict';
+const F = window.Farol, N = F.N, NN = F.NN;
+const $ = s => document.querySelector(s);
+const CVAR = {1:'var(--red)', 2:'var(--blue)'};
+const store = { get(k, d){ try{ const v = localStorage.getItem('farol.' + k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } }, set(k, v){ try{ localStorage.setItem('farol.' + k, JSON.stringify(v)); }catch(e){} } };
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep = ms => new Promise(r => setTimeout(r, reduceMotion ? 0 : ms));
+
+const LANGS = {
+  es: { code:'es',
+    themes:{ clasico:{name:'Clásico',t:['Rojo','Azul'],C:'la corona',CN:'la corona',CT:'La corona'}, mareas:{name:'Mareas',t:['Coral','Marino'],C:'el faro',CN:'el faro',CT:'El faro'}, nieve:{name:'Nieve',t:['Zorro','Lobo'],C:'el copo',CN:'el copo',CT:'El copo'}, tinta:{name:'Tinta',t:['Bermellón','Índigo'],C:'el pincel',CN:'el pincel',CT:'El pincel'}, colmena:{name:'Colmena',t:['Miel','Lavanda'],C:'la reina',CN:'la reina',CT:'La reina'} }, themeLbl:'Tema', game:'Farol', tagline:'jugáis a la vez', names:{1:'Rojo', 2:'Azul'}, you:'tú', sound:'Sonido',
+    tabs:{ play:'Jugar', tutorial:'Tutorial', rules:'Reglas' }, caps:(n, m) => `capturas ${n}/${m}`,
+    st:{ replay:(i, n) => `Repetición · turno ${i} de ${n}`, wins:n => `Gana ${n}`, byCap:' por capturas', draw:'Tablas', thinks:'El bot elige en secreto', revealing:'Revelando…', stepDone:'Paso completado: pulsa «Siguiente»',
+      secret:n => `${n} elige en secreto`, choose:'Elige tu casilla en secreto', confirm:'Pulsa «Jugar aquí» para confirmar' },
+    bar:{ go:'Jugar aquí', newGame:'Nueva partida', replay:'Ver repetición', play:'Reproducir', pause:'Pausa', exit:'Salir', repeat:'Repetir paso', next:'Siguiente', finish:'Terminar' },
+    side:{ game:'Partida', rival:'Rival', bot:'Bot', two:'2 jugadores', color:'Tu color', level:'Nivel', levels:['Fácil', 'Normal', 'Difícil'], reminder:'Recordatorio',
+      remind:'<p style="margin:0">Los dos elegís casilla a la vez. Si coincidís, se la queda quien tiene <b>{C}</b>, y {CN} cambia de manos. Gana quien haga <b>5 en línea</b> o <b>4 capturas</b>.</p>' },
+    cover:{ title:n => `Turno de ${n}`, text:(a, b) => `${a} ya ha elegido. Pásale el dispositivo a ${b} sin mirar.`, ready:'Estoy listo' },
+    log:{ clash:(h, n) => `¡Choque! Los dos fuisteis a la misma casilla: se la queda <b>${h}</b> y {CN} pasa a <b>${n}</b>.`, both:(n1, a, n2, b) => `${n1} jugó en ${a} y ${n2} en ${b}.`, capture:(n, c) => `<b>${n}</b> captura ${c === 1 ? 'una pareja' : c + ' parejas'}.` },
+    ban:{ youWon:'¡Has ganado!', botWins:'Gana el bot', byCap:'Por capturas', byLine:'5 en línea', turns:n => `${n} turnos`, again:'Otra partida' },
+    tut:{
+      simul:{ title:'1 · A la vez', text:'<p>En Farol no hay turnos alternos: <b>los dos elegís una casilla en secreto</b> y se revelan a la vez.</p><p>Toca una casilla y pulsa «Jugar aquí».</p>', ok:'Eso es. El rival ha elegido a la vez que tú, sin saber dónde ibas.' },
+      corona:{ title:'2 · {CT}', text:'<p>{N2} tiene 4 en línea y le falta una casilla. Va a jugar ahí, seguro.</p><p>Si los dos elegís la misma casilla, se la queda quien tiene <b>{C}</b>. Ahora juega a tu favor: elige la casilla que necesita {N2}.</p>', ok:'¡Choque ganado! La casilla es tuya, pero {CN} ha pasado a {N2}. Guarda los choques para cuando de verdad los necesites.' },
+      captura:{ title:'3 · Capturas', text:'<p>Si encierras <b>dos fichas rivales seguidas</b> entre dos tuyas, se retiran del tablero.</p><p>Captura la pareja de {N2} de la fila de arriba. Con 4 capturas también ganas.</p>', ok:'¡Capturadas! Las casillas quedan libres otra vez.' },
+      doble:{ title:'4 · Doble amenaza', text:'<p>Tienes 3 en línea con los dos extremos libres. Alárgala a 4 y tendrás <b>dos casillas ganadoras</b>.</p><p>{N2} solo puede tapar una por turno: en el siguiente, gana por la otra.</p>', ok:'¡Ganado! Así se fuerza la victoria aunque el rival adivine.' },
+    },
+    tutAlmost:'Casi. Pulsa «Repetir paso» y prueba otra vez.', tutDouble:'Bien: ahora tienes dos casillas ganadoras y {N2} solo puede tapar una. Remata.',
+    rules:`<h2>Reglas</h2><ol>
+      <li>Tablero de 9×9. Gana quien haga <b>5 en línea</b> (horizontal, vertical o diagonal) o consiga <b>4 capturas</b>.</li>
+      <li>Cada turno, <b>los dos elegís una casilla en secreto</b> y se revelan a la vez. Cada uno pone su ficha.</li>
+      <li>Si elegís <b>la misma casilla</b>, se la queda quien tiene <b>{C}</b>, y {CN} pasa al otro.</li>
+      <li><b>Captura:</b> si encierras dos fichas rivales seguidas entre dos tuyas, se retiran.</li>
+      <li>Si los dos ganáis en el mismo turno, gana quien tenía {C}.</li></ol>
+      <h3>Consejos</h3><p style="margin:0 0 6px">Nadie empieza con ventaja: jugáis a la vez. La gracia está en adivinar dónde va a jugar el otro, y en no ser previsible.</p><p style="margin:0">Una línea de 4 con los dos extremos libres es imparable: el rival solo puede tapar uno.</p>` },
+
+  en: { code:'en',
+    themes:{ clasico:{name:'Classic',t:['Red','Blue'],C:'the crown',CN:'the crown',CT:'The crown'}, mareas:{name:'Tides',t:['Coral','Navy'],C:'the lighthouse',CN:'the lighthouse',CT:'The lighthouse'}, nieve:{name:'Snow',t:['Fox','Wolf'],C:'the snowflake',CN:'the snowflake',CT:'The snowflake'}, tinta:{name:'Ink',t:['Vermilion','Indigo'],C:'the brush',CN:'the brush',CT:'The brush'}, colmena:{name:'Hive',t:['Honey','Lavender'],C:'the queen',CN:'the queen',CT:'The queen'} }, themeLbl:'Theme', game:'Bluff', tagline:'you both move at once', names:{1:'Red', 2:'Blue'}, you:'you', sound:'Sound',
+    tabs:{ play:'Play', tutorial:'Tutorial', rules:'Rules' }, caps:(n, m) => `captures ${n}/${m}`,
+    st:{ replay:(i, n) => `Replay · turn ${i} of ${n}`, wins:n => `${n} wins`, byCap:' on captures', draw:'Draw', thinks:'The bot is choosing in secret', revealing:'Revealing…', stepDone:'Step complete: press "Next"',
+      secret:n => `${n} chooses in secret`, choose:'Choose your cell in secret', confirm:'Press "Play here" to confirm' },
+    bar:{ go:'Play here', newGame:'New game', replay:'Watch replay', play:'Play', pause:'Pause', exit:'Exit', repeat:'Repeat step', next:'Next', finish:'Finish' },
+    side:{ game:'Game', rival:'Opponent', bot:'Bot', two:'2 players', color:'Your colour', level:'Level', levels:['Easy', 'Normal', 'Hard'], reminder:'Quick reminder',
+      remind:'<p style="margin:0">You both choose a cell at the same time. If you pick the same one, whoever holds <b>{C}</b> gets it, and {CN} changes hands. Make <b>5 in a row</b> or <b>4 captures</b> to win.</p>' },
+    cover:{ title:n => `${n}'s turn`, text:(a, b) => `${a} has chosen. Hand the device to ${b} without looking.`, ready:'I\'m ready' },
+    log:{ clash:(h, n) => `Clash! You both went for the same cell: <b>${h}</b> keeps it and {CN} passes to <b>${n}</b>.`, both:(n1, a, n2, b) => `${n1} played ${a} and ${n2} played ${b}.`, capture:(n, c) => `<b>${n}</b> captures ${c === 1 ? 'a pair' : c + ' pairs'}.` },
+    ban:{ youWon:'You won!', botWins:'The bot wins', byCap:'On captures', byLine:'5 in a row', turns:n => `${n} turns`, again:'Play again' },
+    tut:{
+      simul:{ title:'1 · At the same time', text:'<p>There are no alternating turns in Bluff: <b>you both choose a cell in secret</b> and reveal at once.</p><p>Tap a cell and press "Play here".</p>', ok:'That\'s it. Your opponent chose at the same time, without knowing where you\'d go.' },
+      corona:{ title:'2 · {CT}', text:'<p>{N2} has 4 in a row and needs one more cell. They will surely play there.</p><p>If you both choose the same cell, whoever holds <b>{C}</b> gets it. You have it: play on the cell {N2} needs.</p>', ok:'Clash won! The cell is yours, but {CN} has passed to {N2}. Save clashes for when you really need them.' },
+      captura:{ title:'3 · Captures', text:'<p>If you trap <b>two enemy stones in a row</b> between two of yours, they are removed from the board.</p><p>Capture {N2}\'s pair on the top row. 4 captures also win the game.</p>', ok:'Captured! Those cells are free again.' },
+      doble:{ title:'4 · Double threat', text:'<p>You have 3 in a row with both ends open. Stretch it to 4 and you\'ll have <b>two winning cells</b>.</p><p>{N2} can only cover one per turn: next turn, win on the other.</p>', ok:'Won! That\'s how you force a win even if your opponent guesses right.' },
+    },
+    tutAlmost:'Almost. Press "Repeat step" and try again.', tutDouble:'Good: now you have two winning cells and {N2} can only cover one. Finish it.',
+    rules:`<h2>Rules</h2><ol>
+      <li>9×9 board. Make <b>5 in a row</b> (horizontal, vertical or diagonal) or get <b>4 captures</b> to win.</li>
+      <li>Each turn, <b>you both choose a cell in secret</b> and reveal at once. Each places a stone.</li>
+      <li>If you pick <b>the same cell</b>, whoever holds <b>{C}</b> gets it, and {CN} passes to the other player.</li>
+      <li><b>Capture:</b> trap two enemy stones in a row between two of yours and they are removed.</li>
+      <li>If you both win on the same turn, whoever held {C} wins.</li></ol>
+      <h3>Tips</h3><p style="margin:0 0 6px">Nobody starts ahead: you move at the same time. The fun is guessing where the other will play, and not being predictable.</p><p style="margin:0">A line of 4 with both ends open is unstoppable: your opponent can only cover one.</p>` },
+
+  fr: { code:'fr',
+    themes:{ clasico:{name:'Classique',t:['Rouge','Bleu'],C:'la couronne',CN:'la couronne',CT:'La couronne'}, mareas:{name:'Marées',t:['Corail','Marine'],C:'le phare',CN:'le phare',CT:'Le phare'}, nieve:{name:'Neige',t:['Renard','Loup'],C:'le flocon',CN:'le flocon',CT:'Le flocon'}, tinta:{name:'Encre',t:['Vermillon','Indigo'],C:'le pinceau',CN:'le pinceau',CT:'Le pinceau'}, colmena:{name:'Ruche',t:['Miel','Lavande'],C:'la reine',CN:'la reine',CT:'La reine'} }, themeLbl:'Thème', game:'Bluff', tagline:'vous jouez en même temps', names:{1:'Rouge', 2:'Bleu'}, you:'toi', sound:'Son',
+    tabs:{ play:'Jouer', tutorial:'Tutoriel', rules:'Règles' }, caps:(n, m) => `prises ${n}/${m}`,
+    st:{ replay:(i, n) => `Revoir · tour ${i} sur ${n}`, wins:n => `${n} gagne`, byCap:' aux prises', draw:'Égalité', thinks:'Le bot choisit en secret', revealing:'Révélation…', stepDone:'Étape réussie : appuie sur « Suivant »',
+      secret:n => `${n} choisit en secret`, choose:'Choisis ta case en secret', confirm:'Appuie sur « Jouer ici » pour confirmer' },
+    bar:{ go:'Jouer ici', newGame:'Nouvelle partie', replay:'Revoir la partie', play:'Lecture', pause:'Pause', exit:'Quitter', repeat:'Refaire l’étape', next:'Suivant', finish:'Terminer' },
+    side:{ game:'Partie', rival:'Adversaire', bot:'Bot', two:'2 joueurs', color:'Ta couleur', level:'Niveau', levels:['Facile', 'Normal', 'Difficile'], reminder:'Rappel',
+      remind:'<p style="margin:0">Vous choisissez une case en même temps. Si c’est la même, elle revient à celui qui a <b>{C}</b>, et {CN} change de main. Fais <b>5 en ligne</b> ou <b>4 prises</b> pour gagner.</p>' },
+    cover:{ title:n => `Au tour de ${n}`, text:(a, b) => `${a} a choisi. Passe l’appareil à ${b} sans regarder.`, ready:'Je suis prêt' },
+    log:{ clash:(h, n) => `Choc ! Vous avez visé la même case : <b>${h}</b> la garde et {CN} passe à <b>${n}</b>.`, both:(n1, a, n2, b) => `${n1} a joué en ${a} et ${n2} en ${b}.`, capture:(n, c) => `<b>${n}</b> prend ${c === 1 ? 'une paire' : c + ' paires'}.` },
+    ban:{ youWon:'Tu as gagné !', botWins:'Le bot gagne', byCap:'Aux prises', byLine:'5 en ligne', turns:n => `${n} tours`, again:'Rejouer' },
+    tut:{
+      simul:{ title:'1 · En même temps', text:'<p>Pas de tours alternés : <b>vous choisissez une case en secret</b> et vous la révélez en même temps.</p><p>Touche une case et appuie sur « Jouer ici ».</p>', ok:'C’est ça. L’adversaire a choisi en même temps que toi, sans savoir où tu allais.' },
+      corona:{ title:'2 · {CT}', text:'<p>{N2} a 4 en ligne et il lui manque une case. Il va sûrement y jouer.</p><p>Si vous choisissez la même case, elle revient à celui qui a <b>{C}</b>. Tu l’as : joue sur la case dont {N2} a besoin.</p>', ok:'Choc gagné ! La case est à toi, mais {CN} change de camp et va à {N2}. Garde les chocs pour quand tu en as vraiment besoin.' },
+      captura:{ title:'3 · Les prises', text:'<p>Si tu encadres <b>deux pierres adverses à la suite</b> entre deux des tiennes, elles quittent le plateau.</p><p>Prends la paire de {N2} dans la rangée du haut. 4 prises font aussi gagner.</p>', ok:'Prises ! Ces cases sont de nouveau libres.' },
+      doble:{ title:'4 · Double menace', text:'<p>Tu as 3 en ligne avec les deux bouts libres. Passe à 4 et tu auras <b>deux cases gagnantes</b>.</p><p>{N2} ne peut en boucher qu’une par tour : au suivant, gagne par l’autre.</p>', ok:'Gagné ! C’est ainsi qu’on force la victoire même si l’adversaire devine.' },
+    },
+    tutAlmost:'Presque. Appuie sur « Refaire l’étape » et réessaie.', tutDouble:'Bien : tu as deux cases gagnantes et {N2} ne peut en boucher qu’une. Conclus.',
+    rules:`<h2>Règles</h2><ol>
+      <li>Plateau 9×9. On gagne avec <b>5 en ligne</b> (horizontale, verticale ou diagonale) ou <b>4 prises</b>.</li>
+      <li>À chaque tour, <b>vous choisissez une case en secret</b> et vous la révélez en même temps. Chacun pose sa pierre.</li>
+      <li>Si vous choisissez <b>la même case</b>, elle revient à celui qui a <b>{C}</b>, et {CN} passe à l’autre.</li>
+      <li><b>Prise :</b> encadre deux pierres adverses à la suite entre deux des tiennes et elles sont retirées.</li>
+      <li>Si vous gagnez tous les deux au même tour, celui qui avait {C} l’emporte.</li></ol>
+      <h3>Conseils</h3><p style="margin:0 0 6px">Personne ne part avec un avantage : vous jouez en même temps. Tout l’intérêt est de deviner où l’autre va jouer, et de ne pas être prévisible.</p><p style="margin:0">Une ligne de 4 avec les deux bouts libres est imparable : l’adversaire ne peut en boucher qu’un.</p>` },
+
+  de: { code:'de',
+    themes:{ clasico:{name:'Klassisch',t:['Rot','Blau'],C:'die Krone',CN:'die Krone',CT:'Die Krone'}, mareas:{name:'Gezeiten',t:['Koralle','Marine'],C:'den Leuchtturm',CN:'der Leuchtturm',CT:'Der Leuchtturm'}, nieve:{name:'Schnee',t:['Fuchs','Wolf'],C:'die Schneeflocke',CN:'die Schneeflocke',CT:'Die Schneeflocke'}, tinta:{name:'Tinte',t:['Zinnober','Indigo'],C:'den Pinsel',CN:'der Pinsel',CT:'Der Pinsel'}, colmena:{name:'Bienenstock',t:['Honig','Lavendel'],C:'die Königin',CN:'die Königin',CT:'Die Königin'} }, themeLbl:'Thema', game:'Bluff', tagline:'ihr zieht gleichzeitig', names:{1:'Rot', 2:'Blau'}, you:'du', sound:'Ton',
+    tabs:{ play:'Spielen', tutorial:'Anleitung', rules:'Regeln' }, caps:(n, m) => `Schläge ${n}/${m}`,
+    st:{ replay:(i, n) => `Wiederholung · Runde ${i} von ${n}`, wins:n => `${n} gewinnt`, byCap:' durch Schläge', draw:'Unentschieden', thinks:'Der Bot wählt geheim', revealing:'Aufdecken…', stepDone:'Schritt geschafft: Drück auf „Weiter“',
+      secret:n => `${n} wählt geheim`, choose:'Wähle dein Feld geheim', confirm:'Drück „Hier spielen“, um zu bestätigen' },
+    bar:{ go:'Hier spielen', newGame:'Neue Partie', replay:'Wiederholung ansehen', play:'Abspielen', pause:'Pause', exit:'Beenden', repeat:'Schritt wiederholen', next:'Weiter', finish:'Fertig' },
+    side:{ game:'Partie', rival:'Gegner', bot:'Bot', two:'2 Spieler', color:'Deine Farbe', level:'Stufe', levels:['Leicht', 'Normal', 'Schwer'], reminder:'Kurz erinnert',
+      remind:'<p style="margin:0">Ihr wählt gleichzeitig ein Feld. Wählt ihr dasselbe, bekommt es, wer <b>{C}</b> hat, und {CN} wechselt den Besitzer. Gewonnen hat, wer <b>5 in einer Reihe</b> oder <b>4 Schläge</b> schafft.</p>' },
+    cover:{ title:n => `${n} ist dran`, text:(a, b) => `${a} hat gewählt. Gib das Gerät an ${b} weiter, ohne hinzusehen.`, ready:'Bin bereit' },
+    log:{ clash:(h, n) => `Zusammenstoß! Ihr habt dasselbe Feld gewählt: <b>${h}</b> bekommt es und {CN} geht an <b>${n}</b>.`, both:(n1, a, n2, b) => `${n1} spielte ${a} und ${n2} spielte ${b}.`, capture:(n, c) => `<b>${n}</b> schlägt ${c === 1 ? 'ein Paar' : c + ' Paare'}.` },
+    ban:{ youWon:'Du hast gewonnen!', botWins:'Der Bot gewinnt', byCap:'Durch Schläge', byLine:'5 in einer Reihe', turns:n => `${n} Runden`, again:'Noch eine Partie' },
+    tut:{
+      simul:{ title:'1 · Gleichzeitig', text:'<p>Bei Bluff gibt es keine abwechselnden Züge: <b>Ihr wählt beide geheim ein Feld</b> und deckt es gleichzeitig auf.</p><p>Tippe ein Feld an und drück „Hier spielen“.</p>', ok:'Genau. Dein Gegner hat gleichzeitig gewählt, ohne zu wissen, wohin du gehst.' },
+      corona:{ title:'2 · {CT}', text:'<p>{N2} hat 4 in einer Reihe und braucht noch ein Feld. Dort wird {N2} sicher spielen.</p><p>Wählt ihr dasselbe Feld, bekommt es, wer <b>{C}</b> hat. Gerade hast du den Vorteil: Spiel auf das Feld, das {N2} braucht.</p>', ok:'Zusammenstoß gewonnen! Das Feld gehört dir, aber {CN} ist an {N2} gegangen. Heb dir Zusammenstöße für den Moment auf, in dem du sie wirklich brauchst.' },
+      captura:{ title:'3 · Schlagen', text:'<p>Schließt du <b>zwei gegnerische Steine in einer Reihe</b> zwischen zwei eigenen ein, werden sie vom Brett genommen.</p><p>Schlag das Paar von {N2} in der oberen Reihe. Mit 4 Schlägen gewinnst du auch.</p>', ok:'Geschlagen! Die Felder sind wieder frei.' },
+      doble:{ title:'4 · Doppelte Drohung', text:'<p>Du hast 3 in einer Reihe mit zwei freien Enden. Mach 4 daraus und du hast <b>zwei Gewinnfelder</b>.</p><p>{N2} kann pro Runde nur eines decken: In der nächsten gewinnst du über das andere.</p>', ok:'Gewonnen! So erzwingt man den Sieg, auch wenn der Gegner richtig rät.' },
+    },
+    tutAlmost:'Fast. Drück auf „Schritt wiederholen“ und versuch es noch einmal.', tutDouble:'Gut: Du hast zwei Gewinnfelder und {N2} kann nur eines decken. Mach es fertig.',
+    rules:`<h2>Regeln</h2><ol>
+      <li>9×9-Brett. Gewonnen hat, wer <b>5 in einer Reihe</b> (waagrecht, senkrecht oder diagonal) oder <b>4 Schläge</b> schafft.</li>
+      <li>In jeder Runde <b>wählt ihr beide geheim ein Feld</b> und deckt gleichzeitig auf. Jeder setzt seinen Stein.</li>
+      <li>Wählt ihr <b>dasselbe Feld</b>, bekommt es, wer <b>{C}</b> hat, und {CN} geht an den anderen.</li>
+      <li><b>Schlagen:</b> Schließ zwei gegnerische Steine in einer Reihe zwischen zwei eigenen ein, dann werden sie entfernt.</li>
+      <li>Gewinnt ihr beide in derselben Runde, gewinnt, wer {C} hatte.</li></ol>
+      <h3>Tipps</h3><p style="margin:0 0 6px">Niemand startet im Vorteil: Ihr zieht gleichzeitig. Der Reiz liegt darin, zu erraten, wo der andere spielt, und selbst nicht berechenbar zu sein.</p><p style="margin:0">Eine Viererreihe mit zwei freien Enden ist nicht aufzuhalten: Der Gegner kann nur ein Ende decken.</p>` },
+};
+function detectLang(){
+  const s = store.get('lang', null); if (s && LANGS[s]) return s;
+  const n = (navigator.language || 'en').toLowerCase();
+  if (/^(es|gl|ca|eu)/.test(n)) return 'es'; if (n.startsWith('fr')) return 'fr'; if (n.startsWith('de')) return 'de'; return 'en';
+}
+
+let L = LANGS[detectLang()];
+/* ---------- Temas ---------- */
+const THEMES = {
+  clasico:{ vars:{bg:'#f1eee8', paper:'#fffdf9', cell:'#ebe4d6', grid:'#d6cab5', red:'#d65746', blue:'#3d72c6', gold:'#e0a82e', nav:'#e8e2d6'},
+    icon:'<path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8z"/>',
+    stone(g, p, el){ el('circle', {r:4, fill:`url(#gr${p})`, filter:'url(#sh)', stroke:'#fff', 'stroke-width':.55}, g); el('circle', {r:1.2, cx:-1.2, cy:-1.4, fill:'#fff', opacity:.2}, g); } },
+  mareas:{ vars:{bg:'#e6eff1', paper:'#f8fcfd', cell:'#d3e7ec', grid:'#b2d0d8', red:'#e0623f', blue:'#1f4f86', gold:'#f0b43a', nav:'#d9e7eb'},
+    icon:'<path d="M10 3h4l.6 2H9.4zM9.2 6h5.6l1.7 15H7.5z"/><path d="M4 4.5 8.5 6M20 4.5 15.5 6M3.5 8.5 8 7.6M20.5 8.5 16 7.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+    stone(g, p, el){ el('circle', {r:4, fill:`url(#gr${p})`, filter:'url(#sh)', stroke:'#fff', 'stroke-width':.5}, g); el('circle', {r:2.6, fill:'none', stroke:'#fff', 'stroke-width':1.1, opacity:.95}, g); el('circle', {r:.75, fill:'#ffd35a', stroke:'#fff', 'stroke-width':.25}, g); },
+    deco(g, x, y, el){ el('path', {d:`M${x - 3.6} ${y + 1.5} q.9 -.9 1.8 0 t1.8 0 t1.8 0 t1.8 0`, fill:'none', stroke:'#fff', 'stroke-width':.4, opacity:.6, 'pointer-events':'none'}, g); } },
+  nieve:{ vars:{bg:'#edf1f5', paper:'#fcfdff', cell:'#f6f8fb', grid:'#d4dde8', red:'#d8742a', blue:'#4c6a8a', gold:'#5fb3d9', nav:'#e2e8ef'},
+    icon:'<path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7M12 2l-2 2M12 2l2 2M12 22l-2-2M12 22l2-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>',
+    stone(g, p, el){ el('circle', {r:4, fill:`url(#gr${p})`, filter:'url(#sh)', stroke:'#fff', 'stroke-width':.5}, g); el('path', {d:'M-3.2 -1.6 Q-2 -3.9 0 -4 Q2.2 -3.9 3.3 -1.4 Q1.6 -2.4 0 -1.9 Q-1.8 -2.5 -3.2 -1.6Z', fill:'#fff', opacity:.95}, g); el('circle', {r:.35, cx:1.6, cy:1.4, fill:'#fff', opacity:.8}, g); },
+    deco(g, x, y, el){ [[-2.8,-2.2,.3],[2.6,2.4,.25],[1.4,-3,.2]].forEach(([dx, dy, r]) => el('circle', {cx:x + dx, cy:y + dy, r, fill:'#fff', 'pointer-events':'none'}, g)); } },
+  tinta:{ vars:{bg:'#f2ebdd', paper:'#fbf7ee', cell:'#efe5cf', grid:'#c9b48d', red:'#c0391f', blue:'#2c3c8c', gold:'#b8892f', nav:'#e8dfcc'},
+    icon:'<path d="M20.5 3.5c-3 1-8.5 6-10.4 8.6l1.8 1.8c2.6-1.9 7.6-7.4 8.6-10.4zM9.2 13c-2 .2-3.4 1.6-3.6 3.7-.1 1.4-.9 2.5-2.6 3.3 3.8.8 7.6-.4 8-4.5z"/>',
+    stone(g, p, el){ el('path', {d:'M0 -4.2 C1.8 -4.3 2.6 -3 3.6 -2.4 C4.6 -1.3 4.2 .4 4 1.6 C3.7 3.1 2.4 4.2 .6 4.1 C-1 4.4 -2.6 3.8 -3.5 2.6 C-4.5 1.3 -4.4 -.6 -3.8 -2 C-3 -3.5 -1.6 -4.1 0 -4.2Z', fill:`url(#gr${p})`, filter:'url(#sh)'}, g); el('circle', {r:1.4, cx:3.9, cy:-3.4, fill:p === 1 ? 'var(--red)' : 'var(--blue)', opacity:.85}, g); el('circle', {r:2, fill:'none', stroke:'#fff', 'stroke-width':.35, opacity:.4}, g); } },
+  colmena:{ vars:{bg:'#faf2da', paper:'#fffaea', cell:'#faefcf', grid:'#e3c777', red:'#d97f06', blue:'#7254ab', gold:'#3a2d12', nav:'#f2e6bf'},
+    icon:'<path d="M3 9l4.5 3.5L12 6l4.5 6.5L21 9l-2 10H5L3 9z"/><circle cx="12" cy="3.2" r="1.6"/>',
+    stone(g, p, el){ const hx = (r) => [0,1,2,3,4,5].map(i => { const a = Math.PI / 180 * (60 * i); return (r * Math.cos(a)).toFixed(2) + ',' + (r * Math.sin(a)).toFixed(2); }).join(' ');
+      el('polygon', {points:hx(4.4), fill:`url(#gr${p})`, filter:'url(#sh)', stroke:'#fff', 'stroke-width':.5}, g); el('polygon', {points:hx(2.6), fill:'none', stroke:'#fff', 'stroke-width':.45, opacity:.6}, g); },
+    deco(g, x, y, el){ const pts = [0,1,2,3,4,5].map(i => { const a = Math.PI / 180 * (60 * i); return (x + 3.6 * Math.cos(a)).toFixed(2) + ',' + (y + 3.6 * Math.sin(a)).toFixed(2); }).join(' '); el('polygon', {points:pts, fill:'none', stroke:'#fff', 'stroke-width':.4, opacity:.7, 'pointer-events':'none'}, g); } },
+};
+let TH = THEMES[store.get('theme', 'clasico')] ? store.get('theme', 'clasico') : 'clasico';
+const LT = () => L.themes[TH];
+const NAME = p => LT().t[p - 1];
+const fx = s => s.replace(/\{CT\}/g, LT().CT).replace(/\{CN\}/g, LT().CN).replace(/\{C\}/g, LT().C).replace(/\{N1\}/g, NAME(1)).replace(/\{N2\}/g, NAME(2));
+const crownSVG = () => `<svg class="crown" viewBox="0 0 24 24" fill="currentColor">${THEMES[TH].icon}</svg>`;
+function applyTheme(){ const r = document.documentElement.style; for (const [k, v] of Object.entries(THEMES[TH].vars)) r.setProperty('--' + k, v); }
+
+applyTheme();
+
+/* ---------- Sonido ---------- */
+const Sound = (() => {
+  let ctx = null, master = null, on = store.get('sound', true);
+  function ensure(){ if (!on) return null; try{ if (!ctx){ ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = .55; master.connect(ctx.destination); } if (ctx.state === 'suspended') ctx.resume(); }catch(e){ return null; } return ctx; }
+  function tone({f=440, f2=null, type='sine', dur=.15, gain=.25, attack=.004, when=0, filter=null}){ const c = ensure(); if (!c) return; const t = c.currentTime + when, o = c.createOscillator(), g = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(gain, t + attack); g.gain.exponentialRampToValueAtTime(.0001, t + dur); let n = o; if (filter){ const fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = filter; o.connect(fl); n = fl; } n.connect(g); g.connect(master); o.start(t); o.stop(t + dur + .05); }
+  function noise({dur=.2, gain=.12, f=1200, f2=null, q=1.2, when=0}){ const c = ensure(); if (!c) return; const t = c.currentTime + when, len = Math.ceil(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len); const src = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); src.buffer = buf; fl.type = 'bandpass'; fl.Q.value = q; fl.frequency.setValueAtTime(f, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur); src.connect(fl); fl.connect(g); g.connect(master); src.start(t); src.stop(t + dur + .02); }
+  const S = {
+    pick(){ tone({f:880, f2:1100, dur:.06, gain:.08, type:'triangle'}); },
+    lock(){ tone({f:520, dur:.08, gain:.1, type:'triangle'}); tone({f:780, dur:.1, gain:.08, type:'triangle', when:.06}); },
+    drum(){ noise({dur:.5, gain:.06, f:300, f2:900, q:.7}); },
+    place(p){ tone({f:p === 1 ? 170 : 210, f2:110, dur:.12, gain:.3}); noise({dur:.06, gain:.08, f:2000, q:1.5}); },
+    clash(){ noise({dur:.25, gain:.16, f:2500, f2:600, q:2}); tone({f:300, f2:150, dur:.2, gain:.15, type:'square', filter:900}); },
+    crown(){ [783.99, 1046.5, 1318.5].forEach((f, i) => tone({f, dur:.4, gain:.08, when:i * .07})); },
+    capture(){ tone({f:620, f2:200, dur:.3, gain:.12, type:'triangle'}); tone({f:500, f2:160, dur:.3, gain:.1, type:'triangle', when:.08}); },
+    error(){ tone({f:140, dur:.12, gain:.14, type:'square', filter:500}); },
+    win(){ [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => tone({f, dur:.5, gain:.13, type:'triangle', when:i * .11, filter:3000})); },
+    lose(){ [392, 349.23, 293.66].forEach((f, i) => tone({f, dur:.5, gain:.11, type:'triangle', when:i * .16, filter:1800})); },
+    ok(){ [659.25, 987.77].forEach((f, i) => tone({f, dur:.35, gain:.1, type:'triangle', when:i * .09})); },
+  };
+  return { play(n, ...a){ if (on && S[n]) try{ S[n](...a); }catch(e){} }, get on(){ return on; }, toggle(){ on = !on; store.set('sound', on); if (on) ensure(); return on; }, unlock(){ ensure(); } };
+})();
+function drawSoundBtn(){ $('#soundBtn').innerHTML = Sound.on ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m22 9-6 6M16 9l6 6"/></svg>'; }
+$('#soundBtn').onclick = () => { Sound.toggle(); drawSoundBtn(); };
+document.addEventListener('pointerdown', () => Sound.unlock(), {once:true});
+
+/* ---------- Bot en un Worker ---------- */
+const Bot = (() => {
+  let w = null, seq = 0; const pend = new Map();
+  try{
+    const src = document.getElementById('engine').textContent + `\nself.onmessage = e => { const {id, st, p, level} = e.data; let mv = null; try { mv = Farol.chooseMove(Farol.fromJSON(st), p, level); } catch (err) {} self.postMessage({id, mv}); };`;
+    w = new Worker(URL.createObjectURL(new Blob([src], {type:'text/javascript'})));
+    w.onmessage = e => { const r = pend.get(e.data.id); if (r){ pend.delete(e.data.id); r(e.data.mv); } };
+  }catch(e){ w = null; }
+  return { move(s, p, level){ if (!w) return new Promise(r => setTimeout(() => r(F.chooseMove(s, p, level)), 20)); const id = ++seq; return new Promise(r => { pend.set(id, r); w.postMessage({id, st:F.toJSON(s), p, level}); }); } };
+})();
+
+/* ---------- Tablero ---------- */
+const SZ = 10, PAD = 3;
+const View = (() => {
+  const svg = $('#board'); let layers = {}, stones = [], onCell = null;
+  const xy = k => [PAD + (k % N) * SZ + SZ / 2, PAD + ((k / N) | 0) * SZ + SZ / 2];
+  const el = (tag, a = {}, p) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  function build(){
+    svg.setAttribute('viewBox', `0 0 ${N * SZ + PAD * 2} ${N * SZ + PAD * 2}`); svg.innerHTML = '';
+    const tv = THEMES[TH].vars, mix = (c, w, f) => { const h = x => parseInt(x, 16); const a = [h(c.slice(1, 3)), h(c.slice(3, 5)), h(c.slice(5, 7))], b = w === 'w' ? [255, 255, 255] : [0, 0, 0]; return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * f).toString(16).padStart(2, '0')).join(''); };
+    el('defs', {}, svg).innerHTML = [1, 2].map(p => { const c = p === 1 ? tv.red : tv.blue; return `<radialGradient id="gr${p}" cx="38%" cy="32%" r="75%"><stop offset="0" stop-color="${mix(c, 'w', .3)}"/><stop offset=".6" stop-color="${c}"/><stop offset="1" stop-color="${mix(c, 'k', .15)}"/></radialGradient>`; }).join('') + `
+      <filter id="sh" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy=".7" stdDeviation=".6" flood-color="#000" flood-opacity=".3"/></filter>`;
+    for (const n of ['cells', 'marks', 'stones', 'fx', 'top']) layers[n] = el('g', {}, svg);
+    // puntos de referencia del tablero
+    for (let k = 0; k < NN; k++){ const [x, y] = xy(k); const c = el('rect', {class:'cell', x:x - SZ / 2, y:y - SZ / 2, width:SZ, height:SZ, 'data-k':k}, layers.cells); c.addEventListener('click', () => onCell && onCell(k)); }
+    if (THEMES[TH].deco){ const dg = el('g', {'pointer-events':'none'}, layers.cells); for (let k = 0; k < NN; k++){ const [x, y] = xy(k); THEMES[TH].deco(dg, x, y, el); } }
+    for (const k of [20, 24, 40, 56, 60]){ const [x, y] = xy(k); el('circle', {cx:x, cy:y, r:.8, fill:'#bfb29a', 'pointer-events':'none'}, layers.cells); }
+    stones = [];
+  }
+  function stone(k, p, opts = {}){
+    const [x, y] = xy(k), g = el('g', {'pointer-events':'none'}, opts.layer || layers.stones);
+    g.style.transform = `translate(${x}px,${y}px)`;
+    THEMES[TH].stone(g, p, el);
+    return g;
+  }
+  function sync(s, ui = {}){
+    layers.stones.innerHTML = ''; layers.marks.innerHTML = ''; layers.fx.innerHTML = '';
+    if (!ui.keepTop) layers.top.innerHTML = '';
+    for (let k = 0; k < NN; k++){ const c = layers.cells.querySelector(`[data-k="${k}"]`); c.classList.toggle('full', !!s.m[k]); if (s.m[k]) stone(k, s.m[k]); }
+    if (ui.last) for (const k of ui.last){ if (!s.m[k]) continue; const [x, y] = xy(k); el('circle', {cx:x, cy:y, r:SZ * .11, fill:'#fff', opacity:.85}, layers.marks); }
+    if (ui.pick != null){ const [x, y] = xy(ui.pick); const g = el('g', {}, layers.fx); el('circle', {cx:x, cy:y, r:SZ * .4, fill:CVAR[ui.pickColor], opacity:.28}, g); el('circle', {cx:x, cy:y, r:SZ * .4, fill:'none', stroke:CVAR[ui.pickColor], 'stroke-width':.7, 'stroke-dasharray':'1.6 1.1'}, g); }
+  }
+  // Revelación animada de un turno
+  async function reveal(prev, next){
+    const {a, b, clash, h0, removed} = next.info;
+    Sound.play('drum'); await sleep(320);
+    if (!clash){
+      const g1 = stone(a, 1), g2 = stone(b, 2);
+      for (const [g, k] of [[g1, a], [g2, b]]){ const [x, y] = xy(k); if (!reduceMotion) g.animate([{transform:`translate(${x}px,${y - 5}px) scale(1.5)`, opacity:0}, {transform:`translate(${x}px,${y}px) scale(1)`, opacity:1}], {duration:340, easing:'cubic-bezier(.3,1.4,.5,1)'}); }
+      Sound.play('place', 1); setTimeout(() => Sound.play('place', 2), 40);
+      await sleep(360);
+    } else {
+      const [x, y] = xy(a), d = SZ * .55;
+      const gw = stone(a, h0, {layer:layers.top}), gl = stone(a, 3 - h0, {layer:layers.top});
+      const ka = (who, dx) => [{transform:`translate(${x + dx}px,${y - 4}px) scale(1.3)`, opacity:0}, {transform:`translate(${x + dx * .35}px,${y}px) scale(1)`, opacity:1, offset:.55}, {transform:`translate(${x}px,${y}px) scale(1)`, opacity:1}];
+      if (!reduceMotion){ gw.animate(ka(h0, h0 === 1 ? -d : d), {duration:420, easing:'ease-out'}); gl.animate(ka(3 - h0, h0 === 1 ? d : -d), {duration:420, easing:'ease-out'}); }
+      await sleep(420); Sound.play('clash');
+      if (!reduceMotion) await gl.animate([{transform:`translate(${x}px,${y}px) scale(1)`, opacity:1}, {transform:`translate(${x + (h0 === 1 ? d : -d) * 1.6}px,${y - 6}px) scale(.3)`, opacity:0}], {duration:420, easing:'ease-in', fill:'forwards'}).finished.catch(() => {});
+      gl.remove(); gw.remove(); stone(a, h0);
+      Sound.play('crown'); await sleep(200);
+    }
+    if (removed.length){
+      await sleep(180); Sound.play('capture');
+      for (const [k, p] of removed){
+        const [x, y] = xy(k), ring = el('circle', {cx:x, cy:y, r:SZ * .4, fill:'none', stroke:CVAR[3 - p], 'stroke-width':1.2}, layers.fx);
+        if (!reduceMotion) ring.animate([{opacity:1, r:SZ * .3}, {opacity:0, r:SZ * .8}], {duration:600}).onfinish = () => ring.remove();
+        const g = [...layers.stones.children].find(n => n.style.transform === `translate(${x}px, ${y}px)` || n.style.transform === `translate(${x}px,${y}px)`);
+        if (g && !reduceMotion) g.animate([{opacity:1, transform:g.style.transform + ' scale(1)'}, {opacity:0, transform:g.style.transform + ' scale(.2)'}], {duration:420, easing:'ease-in', fill:'forwards'});
+      }
+      await sleep(450);
+    }
+  }
+  async function winLine(line){
+    layers.top.innerHTML = ''; if (!line) return;
+    const [x1, y1] = xy(line[0]), [x2, y2] = xy(line[line.length - 1]);
+    const ln = el('line', {x1, y1, x2, y2, stroke:'#23211d', 'stroke-width':1.6, 'stroke-linecap':'round', opacity:.75}, layers.top);
+    const len = Math.hypot(x2 - x1, y2 - y1); ln.style.strokeDasharray = len; ln.style.strokeDashoffset = len;
+    if (!reduceMotion) ln.animate([{strokeDashoffset:len}, {strokeDashoffset:0}], {duration:700, easing:'ease-in-out', fill:'forwards'}); else ln.style.strokeDashoffset = 0;
+    await sleep(700);
+  }
+  return { build, sync, reveal, winLine, on(f){ onCell = f; }, xy };
+})();
+
+/* ---------- Estado de la app ---------- */
+const settings = Object.assign({ vs:'bot', human:1, level:2 }, store.get('settings', {}));
+let score = store.get('score', {you:0, bot:0, r:0, b:0});
+let tab = 'play', G = null;
+function newGame(){
+  G = { kind:'play', s:F.newState(1 + (Math.random() < .5 ? 0 : 1)), hist:[], turns:[], pick:null, pending:null, busy:false, last:null, log:'' };
+  hideBanner(); View.build(); render();
+}
+const myColor = () => G.kind === 'tutorial' ? 1 : settings.vs === 'bot' ? settings.human : (G.pending == null ? 1 : 2);
+function render(){
+  View.sync(G.s, { last:G.last, pick:G.pick, pickColor:myColor(), keepTop:G.s.over });
+  renderPlayers(); renderStatus(); renderBar(); renderSide();
+  $('#log').innerHTML = G.log || '';
+}
+function renderPlayers(){
+  const s = G.s, you = p => G.kind === 'play' && settings.vs === 'bot' ? (p === settings.human ? ` (${L.you})` : ' (bot)') : '';
+  $('#players').innerHTML = [1, 2].map(p => `<div class="pl ${s.h === p ? 'has' : ''}"><span class="dot" style="background:${CVAR[p]}"></span>${NAME(p)}${you(p)}${crownSVG()}<span class="caps">${L.caps(s.cap[p], F.CAPWIN)}</span></div>`).join('');
+}
+function renderStatus(){
+  const s = G.s, st = $('#status');
+  if (G.replay != null){ st.innerHTML = L.st.replay(G.replay, G.turns.length); return; }
+  if (s.over){ st.innerHTML = s.winner ? L.st.wins(NAME(s.winner)) + (s.byCap ? L.st.byCap : '') : L.st.draw; return; }
+  if (G.kind === 'tutorial' && G.done){ st.innerHTML = L.st.stepDone; return; }
+  if (G.busy) { st.innerHTML = G.thinking ? L.st.thinks + '<span class="thinking"><i></i><i></i><i></i></span>' : L.st.revealing; return; }
+  if (G.kind === 'play' && settings.vs === 'hot') st.innerHTML = L.st.secret(NAME(myColor()));
+  else st.innerHTML = G.pick == null ? L.st.choose : L.st.confirm;
+}
+function renderBar(){
+  const bar = $('#bar');
+  if (G.replay != null){
+    bar.innerHTML = `<div class="replaybar"><button class="btn" id="rb0">|◀</button><button class="btn" id="rbp">◀</button><button class="btn primary" id="rbplay">${G.rtimer ? L.bar.pause : L.bar.play}</button><button class="btn" id="rbn">▶</button><button class="btn" id="rbend">▶|</button><input type="range" id="rbs" min="0" max="${G.turns.length}" value="${G.replay}"><button class="btn" id="rbx">${L.bar.exit}</button></div>`;
+    $('#rb0').onclick = () => replayJump(0); $('#rbend').onclick = () => replayJump(G.turns.length); $('#rbp').onclick = () => replayJump(G.replay - 1); $('#rbn').onclick = () => replayStep();
+    $('#rbplay').onclick = replayPlay; $('#rbx').onclick = endReplay; $('#rbs').oninput = e => replayJump(+e.target.value); return;
+  }
+  if (G.kind === 'tutorial'){
+    bar.innerHTML = `<button class="btn ${G.done ? '' : 'primary'}" id="go" ${G.pick == null || G.busy || G.s.over || G.done ? 'disabled' : ''}>${L.bar.go}</button><button class="btn" id="treset">${L.bar.repeat}</button><button class="btn ${G.done ? 'primary' : ''}" id="tnext" ${G.done ? '' : 'disabled'}>${G.tidx === TUT.length - 1 ? L.bar.finish : L.bar.next}</button>`;
+    $('#go').onclick = confirmPick; $('#treset').onclick = () => openTutorial(G.tidx); $('#tnext').onclick = () => G.tidx === TUT.length - 1 ? finishTutorial() : openTutorial(G.tidx + 1); return;
+  }
+  bar.innerHTML = `<button class="btn primary" id="go" ${G.pick == null || G.busy || G.s.over ? 'disabled' : ''}>${L.bar.go}</button><button class="btn" id="bnew">${L.bar.newGame}</button>${G.s.over ? `<button class="btn" id="brep">${L.bar.replay}</button>` : ''}`;
+  $('#go').onclick = confirmPick; $('#bnew').onclick = newGame; if ($('#brep')) $('#brep').onclick = startReplay;
+}
+function seg(name, opts, cur){ return `<div class="seg" data-name="${name}">${opts.map(([v, l]) => `<button data-v="${v}" class="${String(v) === String(cur) ? 'on' : ''}">${l}</button>`).join('')}</div>`; }
+function renderSide(){
+  const side = $('#side');
+  if (tab === 'play'){
+    side.innerHTML = `<div class="card"><h2>${L.side.game}</h2>
+      <div class="field"><span>${L.side.rival}</span>${seg('vs', [['bot', L.side.bot], ['hot', L.side.two]], settings.vs)}</div>
+      ${settings.vs === 'bot' ? `<div class="field"><span>${L.side.color}</span>${seg('human', [[1, NAME(1)], [2, NAME(2)]], settings.human)}</div>
+      <div class="field"><span>${L.side.level}</span>${seg('level', L.side.levels.map((l, i) => [i + 1, l]), settings.level)}</div>` : ''}
+      <div class="field"><span>${L.themeLbl}</span>${seg('theme', Object.keys(THEMES).map(id => [id, L.themes[id].name]), TH)}</div>
+      <p class="muted" style="margin:8px 0 0">${settings.vs === 'bot' ? `${L.you[0].toUpperCase() + L.you.slice(1)} ${score.you} · Bot ${score.bot}` : `${NAME(1)} ${score.r} · ${NAME(2)} ${score.b}`}</p></div>
+      <div class="card"><h2>${L.side.reminder}</h2>${fx(L.side.remind)}</div>`;
+    side.querySelectorAll('.seg').forEach(sg => sg.querySelectorAll('button').forEach(b => b.onclick = () => { const n = sg.dataset.name; let v = b.dataset.v;
+      if (n === 'theme'){ TH = v; store.set('theme', v); applyTheme(); View.build(); render(); if (G.s.over) View.winLine(G.s.byCap ? null : F.lineOf(G.s.m, G.s.winner)); return; }
+      if (n !== 'vs') v = +v; settings[n] = v; store.set('settings', settings); newGame(); }));
+  } else if (tab === 'tutorial'){
+    const st = TUT[G.tidx], t = L.tut[st.id];
+    side.innerHTML = `<div class="card"><div class="steps">${TUT.map((_, i) => `<i class="${i <= G.tidx ? 'on' : ''}"></i>`).join('')}</div><h2>${fx(t.title)}</h2><div class="rules">${fx(t.text)}</div>${G.msg ? `<div class="msg ${G.msg.cls}">${G.msg.text}</div>` : ''}</div>`;
+  } else side.innerHTML = `<div class="card rules">${fx(L.rules)}</div>`;
+}
+
+/* ---------- Turnos ---------- */
+View.on(k => {
+  if (!G || G.busy || G.s.over || G.replay != null || G.done) return;
+  if (G.s.m[k]){ Sound.play('error'); return; }
+  G.pick = G.pick === k ? null : k; Sound.play('pick'); render();
+});
+async function confirmPick(){
+  if (G.pick == null || G.busy || G.s.over) return;
+  const mine = G.pick; G.pick = null; Sound.play('lock');
+  if (G.kind === 'play' && settings.vs === 'hot'){
+    if (G.pending == null){ G.pending = mine; render(); showCover(L.cover.title(NAME(2)), L.cover.text(NAME(1), NAME(2))); return; }
+    const a = G.pending; G.pending = null; await playTurn(a, mine); return;
+  }
+  const me = myColor(), opp = 3 - me;
+  G.busy = true; G.thinking = true; render();
+  const t0 = performance.now();
+  const other = G.kind === 'tutorial' ? tutorialReply(mine) : await Bot.move(G.s, opp, settings.level);
+  const wait = 450 - (performance.now() - t0); if (wait > 0) await sleep(wait);
+  G.thinking = false;
+  await playTurn(me === 1 ? mine : other, me === 1 ? other : mine);
+}
+async function playTurn(a, b){
+  G.busy = true; render();
+  const prev = G.s, next = F.resolve(prev, a, b);
+  G.hist.push(prev); G.turns.push([a, b]);
+  await View.reveal(prev, next);
+  G.s = next; G.last = next.info.clash ? [a] : [a, b];
+  const i = next.info;
+  G.log = i.clash ? fx(L.log.clash(NAME(i.h0), NAME(3 - i.h0))) : L.log.both(NAME(1), coord(a), NAME(2), coord(b));
+  if (i.removed.length) G.log += ' ' + L.log.capture(NAME(3 - i.removed[0][1]), i.removed.length / 2);
+  G.busy = false; render();
+  if (next.over) await onOver();
+  if (G.after) await G.after(next);
+}
+const coord = k => 'ABCDEFGHJ'[k % N] + (N - ((k / N) | 0));
+async function onOver(){
+  const s = G.s;
+  await View.winLine(s.byCap ? null : F.lineOf(s.m, s.winner));
+  if (G.kind !== 'play') return;
+  if (settings.vs === 'bot'){ if (s.winner === settings.human){ score.you++; Sound.play('win'); } else { score.bot++; Sound.play('lose'); } }
+  else { if (s.winner === 1) score.r++; else score.b++; Sound.play('win'); }
+  store.set('score', score);
+  const mine = settings.vs === 'bot' && s.winner === settings.human;
+  showBanner(`<b>${settings.vs === 'bot' ? (mine ? L.ban.youWon : L.ban.botWins) : L.st.wins(NAME(s.winner))}</b><span class="muted">${s.byCap ? L.ban.byCap : L.ban.byLine} · ${L.ban.turns(G.turns.length)}</span>
+    <div class="row"><button class="btn primary" data-act="again">${L.ban.again}</button><button class="btn" data-act="replay">${L.bar.replay}</button></div>`);
+  render();
+}
+function showBanner(h){ const b = $('#banner'); b.innerHTML = h; b.classList.add('show'); b.querySelectorAll('[data-act]').forEach(x => x.onclick = () => { hideBanner(); if (x.dataset.act === 'again') newGame(); else startReplay(); }); }
+function hideBanner(){ $('#banner').classList.remove('show'); }
+function showCover(t, x){ $('#coverTitle').textContent = t; $('#coverText').textContent = x; $('#coverBtn').textContent = L.cover.ready; $('#cover').classList.add('show'); }
+$('#coverBtn').onclick = () => { $('#cover').classList.remove('show'); render(); };
+
+/* ---------- Repetición ---------- */
+function startReplay(){ G.final = G.s; G.states = [G.hist[0] || G.s]; for (const [a, b] of G.turns) G.states.push(F.resolve(G.states[G.states.length - 1], a, b)); G.replay = 0; G.s = G.states[0]; G.last = null; G.log = ''; hideBanner(); render(); }
+async function replayStep(){ if (G.busy || G.replay >= G.turns.length) return; G.busy = true; const prev = G.states[G.replay], next = G.states[G.replay + 1]; await View.reveal(prev, next); G.busy = false; G.replay++; G.s = next; G.last = next.info.clash ? [next.info.a] : [next.info.a, next.info.b]; render(); if (G.s.over) View.winLine(G.s.byCap ? null : F.lineOf(G.s.m, G.s.winner)); }
+function replayJump(i){ clearInterval(G.rtimer); G.rtimer = null; i = Math.max(0, Math.min(G.turns.length, i)); G.replay = i; G.s = G.states[i]; const inf = G.s.info; G.last = inf ? (inf.clash ? [inf.a] : [inf.a, inf.b]) : null; render(); }
+function replayPlay(){ if (G.rtimer){ clearInterval(G.rtimer); G.rtimer = null; renderBar(); return; } if (G.replay >= G.turns.length) replayJump(0); G.rtimer = setInterval(() => { if (G.replay >= G.turns.length){ clearInterval(G.rtimer); G.rtimer = null; renderBar(); return; } replayStep(); }, 1300); renderBar(); }
+function endReplay(){ clearInterval(G.rtimer); G.rtimer = null; G.replay = null; G.s = G.final; render(); View.winLine(G.s.byCap ? null : F.lineOf(G.s.m, G.s.winner)); }
+
+/* ---------- Tutorial ---------- */
+const TUT = [
+  { id:'simul', red:[], blue:[], h:1, reply:() => 30 },
+  { id:'corona', red:[36, 11, 70], blue:[37, 38, 39, 40], h:1, reply:() => 41 },
+  { id:'captura', red:[20, 50], blue:[21, 22, 60], h:2, reply:() => 70 },
+  { id:'doble', red:[57, 58, 59, 30], blue:[12, 13, 40], h:2, reply:(mine, s, n) => n === 0 ? 10 : [56, 60, 61, 55].find(k => !s.m[k] && k !== mine) },
+];
+function openTutorial(i){
+  const st = TUT[i], s = F.newState(st.h); st.red.forEach(k => s.m[k] = 1); st.blue.forEach(k => s.m[k] = 2);
+  G = { kind:'tutorial', tidx:i, s, hist:[], turns:[], pick:null, busy:false, last:null, log:'', done:false, msg:null };
+  G.after = tutorialAfter; hideBanner(); View.build(); render();
+}
+function tutorialReply(mine){ const st = TUT[G.tidx]; return st.reply(mine, G.s, G.turns.length); }
+async function tutorialAfter(s){
+  const st = TUT[G.tidx]; let ok = false, fail = false;
+  if (st.id === 'simul') ok = true;
+  if (st.id === 'corona'){ ok = s.info.clash && !s.over; fail = !ok; }
+  if (st.id === 'captura'){ ok = s.info.removed.length > 0; fail = !ok; }
+  if (st.id === 'doble'){ if (s.over && s.winner === 1) ok = true; else if (G.turns.length >= 2 || s.over) fail = true; }
+  if (ok){ G.done = true; G.msg = {cls:'ok', text:fx(L.tut[st.id].ok)}; Sound.play('ok'); }
+  else if (fail){ G.msg = {cls:'bad', text:L.tutAlmost}; G.s = Object.assign(F.clone(G.s), {over:true}); }
+  else if (st.id === 'doble') G.msg = {cls:'ok', text:fx(L.tutDouble)};
+  render();
+}
+function finishTutorial(){ tab = 'play'; document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x.dataset.tab === 'play')); settings.vs = 'bot'; settings.level = 1; store.set('settings', settings); newGame(); }
+
+/* ---------- Pestañas e idioma ---------- */
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => {
+  if (G && G.busy) return;
+  document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+  const t = b.dataset.tab;
+  if (t === 'rules'){ if (tab === 'tutorial'){ tab = 'play'; newGame(); } tab = 'rules'; renderSide(); return; }
+  tab = t; if (t === 'play') newGame(); else openTutorial(0);
+});
+function applyLang(){
+  document.documentElement.lang = L.code; document.title = `${L.game} — ${L.tagline}`;
+  $('.brand h1').textContent = L.game; $('.brand span').textContent = L.tagline;
+  document.querySelectorAll('#tabs button').forEach(b => b.textContent = L.tabs[b.dataset.tab]);
+  $('#soundBtn').title = L.sound; $('#soundBtn').setAttribute('aria-label', L.sound);
+  document.querySelectorAll('#langSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === L.code));
+}
+document.querySelectorAll('#langSeg button').forEach(b => b.onclick = () => { L = LANGS[b.dataset.v]; store.set('lang', L.code); applyLang(); if (G) render(); });
+drawSoundBtn(); applyLang(); newGame();
+window.__app = { get G(){ return G; }, F, newGame, openTutorial, playTurn, settings };
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

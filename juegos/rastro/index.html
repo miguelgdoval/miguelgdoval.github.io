@@ -138,7 +138,7 @@
 <div class="wrap">
   <header>
     <div class="brand"><h1>Rastro</h1><span></span></div>
-    <div class="seg" id="langSeg" aria-label="Idioma / Language"><button data-v="es">ES</button><button data-v="en">EN</button><button data-v="gl">GL</button></div>
+    <div class="seg" id="langSeg" aria-label="Idioma / Language"><button data-v="es">ES</button><button data-v="en">EN</button><button data-v="fr">FR</button><button data-v="de">DE</button></div>
     <nav id="tabs">
       <button data-tab="play" class="on">Jugar</button>
       <button data-tab="puzzles">Problemas</button>
@@ -596,66 +596,123 @@ const LANGS = {
       <h3>Tip</h3><p style="margin:0">Your opponent can't touch the piece you just moved. Leave it where you want to paint next turn: that's the <b>reserve</b>.</p>`,
   },
 
-  gl: {
-    code:'gl', label:'GL', game:'Rastro', tagline:'fichas sen dono',
-    tabs:{ play:'Xogar', puzzles:'Problemas', tutorial:'Titorial', rules:'Regras' }, sound:'Son', language:'Idioma',
+  fr: {
+    code:'fr', label:'FR', game:'Trace', tagline:'des pions sans maître',
+    tabs:{ play:'Jouer', puzzles:'Problèmes', tutorial:'Tutoriel', rules:'Règles' }, sound:'Son', language:'Langue',
     themes:{
-      clasico:{ name:'Clásico', t1:'Vermello', t2:'Azul', w:{ seal:'selada', sealV:'selar', mark:'pegada', first:'a túa primeira pegada' } },
-      mareas:{ name:'Mareas', t1:'Coral', t2:'Mariño', w:{ seal:'fondeada', sealV:'fondear', mark:'estela', first:'a túa primeira estela' } },
-      nieve:{ name:'Neve', t1:'Raposo', t2:'Lobo', w:{ seal:'xeada', sealV:'xear', mark:'pegada', first:'a túa primeira pegada' } },
-      tinta:{ name:'Tinta', t1:'Vermellón', t2:'Índigo', w:{ seal:'lacrada', sealV:'lacrar', mark:'trazo', first:'o teu primeiro trazo' } },
-      colmena:{ name:'Colmea', t1:'Mel', t2:'Lavanda', w:{ seal:'tapada', sealV:'tapar', mark:'néctar', first:'o teu primeiro néctar' } },
+      clasico:{ name:'Classique', t1:'Rouge', t2:'Bleu', w:{ seal:'scellée', sealV:'sceller', mark:'empreinte', first:'ta première empreinte' } },
+      mareas:{ name:'Marées', t1:'Corail', t2:'Marine', w:{ seal:'ancrée', sealV:'ancrer', mark:'sillage', first:'ton premier sillage' } },
+      nieve:{ name:'Neige', t1:'Renard', t2:'Loup', w:{ seal:'gelée', sealV:'geler', mark:'empreinte', first:'ta première empreinte' } },
+      tinta:{ name:'Encre', t1:'Vermillon', t2:'Indigo', w:{ seal:'cachetée', sealV:'cacheter', mark:'trait', first:'ton premier trait' } },
+      colmena:{ name:'Ruche', t1:'Miel', t2:'Lavande', w:{ seal:'operculée', sealV:'operculer', mark:'nectar', first:'ton premier nectar' } },
     },
     st:{
-      replay:(i, n) => `Repetición · xogada ${i} de ${n}`, wins:n => `Gaña ${n}`, byCount:' (por casas)', draw:'Empate',
-      thinks:n => `${n} (bot) pensa`, yourTurn:'Tócache', turnOf:n => `Quenda de ${n}`, yourTurnAs:n => `Tócache (${n})`,
-      place:(y, i, n) => `${y}: coloca unha ficha (${i} de ${n})`, remove:y => `${y}: ninguén pode esvarar, retira unha ficha`, fill:y => `${y}: pinta unha casa libre`,
-      locked:n => `Esa ficha acaba de movela ${n}: nesta quenda non podes tocala.`, stuck:s => `Esa ficha está sobre unha casa túa ou ${s}: non se pode mover.`,
+      replay:(i, n) => `Revoir · coup ${i} sur ${n}`, wins:n => `${n} gagne`, byCount:' (aux cases)', draw:'Égalité',
+      thinks:n => `${n} (bot) réfléchit`, yourTurn:'À toi', turnOf:n => `Au tour de ${n}`, yourTurnAs:n => `À toi (${n})`,
+      place:(y, i, n) => `${y} : place un pion (${i} sur ${n})`, remove:y => `${y} : plus personne ne peut glisser, retire un pion`, fill:y => `${y} : peins une case libre`,
+      locked:n => `${n} vient de jouer ce pion : tu ne peux pas le toucher ce tour-ci.`, stuck:s => `Ce pion est sur une case à toi ou ${s} : il ne peut pas bouger.`,
     },
-    ban:{ youWon:'Gañaches!', botWins:'Gaña o bot', wins:n => `Gaña ${n}`, byCount:'Por número de casas', connected:'Uniu os seus dous lados', moves:n => `${n} xogadas`, again:'Outra partida', replay:'Ver repetición' },
-    bar:{ newGame:'Nova partida', undo:'Desfacer', replay:'Ver repetición', started:n => `Comezou ${n} · altérnase en cada partida`,
-      start:'Inicio', back:'Atrás', play:'Reproducir', pause:'Pausa', fwd:'Adiante', end:'Final', exit:'Saír',
-      hint:'Pista', reset:'Reiniciar', next:'Seguinte', repeat:'Repetir paso', finish:'Rematar' },
-    side:{ game:'Partida', rival:'Rival', bot:'Bot', two:'2 xogadores', color:'A túa cor', level:'Nivel', levels:['Doado', 'Medio', 'Difícil', 'Experto'], theme:'Tema',
-      board:'Taboleiro', size:'Tamaño', s7:'7×7 rápida', s9:'9×9 completa', shape:'Forma', shapes:{ clasico:'Clásico', lago:'Lago', islas:'Illas', recortado:'Recortado' },
-      specials:'Especiais', no:'Non', rocks:'Rochas e áncoras', opening:'Apertura', placement:'Colocación', fixed:'Fixa',
-      note:'Cambiar unha opción comeza unha partida nova.', you:'Ti', botScore:'Bot', reminder:'Lembranza',
-      remind:w => `Move calquera ficha menos a que acaba de mover o teu rival. Deixas a túa ${w.mark} na casa da que sae. Se era do rival, recupérala e queda ${w.seal}. Une os teus dous lados.`,
-      specNote:w => `<b>Rocha:</b> non se pinta nin se cruza. <b>Áncora:</b> quen a pinta déixaa ${w.seal} ao momento.`,
-      holes:'Os ocos do taboleiro non existen: as fichas non os cruzan.' },
-    pz:{ title:i => `Problema ${i}`, plays:n => `Xoga ${n}.`, win2:'Gaña en 2 xogadas', anyway:', faga o que faga o rival.',
-      tip:'A túa primeira xogada debe deixar unha vitoria imparable para a seguinte.', count:(a, b) => `Problemas (${a}/${b} resoltos)`,
-      note:'Ordenados de menos a máis opcións por quenda. Sacados de partidas reais do bot e comprobados un a un.',
-      good:'Boa xogada. O rival defende…', hmm:'Mmm… vexamos que fai o rival.', finish:'Agora remata: tes unha xogada que gaña.',
-      defended:'O rival atopou defensa. Preme Reiniciar e proba outra idea.', oppWon:'O rival gañou. Preme Reiniciar e proba outra idea.',
-      solved:'Resolto!', notWin:'Esa non gaña. Preme Reiniciar.' },
+    ban:{ youWon:'Tu as gagné !', botWins:'Le bot gagne', wins:n => `${n} gagne`, byCount:'Au nombre de cases', connected:'A relié ses deux côtés', moves:n => `${n} coups`, again:'Rejouer', replay:'Revoir la partie' },
+    bar:{ newGame:'Nouvelle partie', undo:'Annuler', replay:'Revoir la partie', started:n => `${n} a commencé · on alterne à chaque partie`,
+      start:'Début', back:'Arrière', play:'Lecture', pause:'Pause', fwd:'Avant', end:'Fin', exit:'Quitter',
+      hint:'Indice', reset:'Recommencer', next:'Suivant', repeat:'Refaire l’étape', finish:'Terminer' },
+    side:{ game:'Partie', rival:'Adversaire', bot:'Bot', two:'2 joueurs', color:'Ta couleur', level:'Niveau', levels:['Facile', 'Moyen', 'Difficile', 'Expert'], theme:'Thème',
+      board:'Plateau', size:'Taille', s7:'7×7 rapide', s9:'9×9 complète', shape:'Forme', shapes:{ clasico:'Classique', lago:'Lac', islas:'Îles', recortado:'Coins coupés' },
+      specials:'Spéciales', no:'Non', rocks:'Rochers et ancres', opening:'Ouverture', placement:'Placement', fixed:'Fixe',
+      note:'Changer une option lance une nouvelle partie.', you:'Toi', botScore:'Bot', reminder:'Rappel',
+      remind:w => `Déplace n’importe quel pion sauf celui que ton adversaire vient de jouer. Tu laisses ton ${w.mark} sur la case qu’il quitte. Si elle était à l’adversaire, tu la reprends et elle reste ${w.seal}. Relie tes deux côtés.`,
+      specNote:w => `<b>Rocher :</b> ne se peint pas et ne se traverse pas. <b>Ancre :</b> qui la peint la laisse ${w.seal} aussitôt.`,
+      holes:'Les trous du plateau n’existent pas : les pions ne peuvent pas les traverser.' },
+    pz:{ title:i => `Problème ${i}`, plays:n => `${n} joue.`, win2:'Gagne en 2 coups', anyway:', quoi que fasse l’adversaire.',
+      tip:'Ton premier coup doit laisser une victoire imparable pour le suivant.', count:(a, b) => `Problèmes (${a}/${b} résolus)`,
+      note:'Classés du moins au plus d’options par tour. Tirés de vraies parties du bot et vérifiés un par un.',
+      good:'Bien joué. L’adversaire se défend…', hmm:'Hmm… voyons ce que fait l’adversaire.', finish:'À toi de conclure : tu as un coup gagnant.',
+      defended:'L’adversaire a trouvé une défense. Appuie sur Recommencer et essaie autre chose.', oppWon:'L’adversaire a gagné. Appuie sur Recommencer et essaie autre chose.',
+      solved:'Résolu !', notWin:'Ce coup ne gagne pas. Appuie sur Recommencer.' },
     tut:(N1, N2, w) => ({
-      deslizar:{ title:'1 · Mover e deixar pegada', text:`<p>As fichas non son de ninguén. Toca unha ficha e logo unha casa en liña recta.</p><p>A casa <b>da que sae</b> píntase da túa cor: é a túa ${w.mark}.</p>`, ok:`Iso é: deixaches ${w.first}.` },
-      bloqueo:{ title:'2 · A ficha bloqueada', text:`<p>${N2} acaba de mover a ficha do anel descontinuo. <b>Nesta quenda non podes tocala</b>: próbao.</p><p>Logo move calquera outra.</p>`, ok:'Ben. Lembra: sempre podes mover calquera ficha menos a última que moveu o teu rival.' },
-      conectar:{ title:'3 · Unir', text:`<p>${N1} gaña unindo <b>arriba con abaixo</b>; ${N2}, esquerda con dereita.</p><p>Fáltache unha casa. Cal? Gaña agora.</p>`, ok:'Unido! Así se gaña.' },
-      recuperar:{ title:`4 · Recuperar e ${w.sealV}`, text:`<p>Podes acabar un movemento sobre unha casa do rival. Cando a ficha sae de aí, a casa pasa a ser túa e queda <b>${w.seal}</b>: ninguén poderá cambiala.</p><p>Move a ficha que está sobre a casa de ${N2} do centro.</p>`, ok:`${cap(w.seal)}! (cor intensa). Esas casas son ouro: ninguén cha quita.` },
-      reserva:{ title:'5 · A reserva', text:'<p>A idea clave. Fáltanche dúas casas na túa columna.</p><p>Se deixas unha ficha sobre unha casa que precisas, o teu rival <b>non poderá movela</b> na súa quenda, e na seguinte móvela ti e pintas. <b>Gaña en 2 xogadas.</b></p>', ok:'Iso é a reserva! Con ela gáñanse a maioría das partidas.' },
-      final:{ title:'6 · O final', text:`<p>Ás veces ningunha ficha pode esvarar (están sobre casas túas ou ${w.seal}s).</p><p>Entón <b>retiras unha ficha</b> do taboleiro. Se xa non quedan, pintas unha casa libre. O taboleiro remata cheo e sempre hai gañador.</p><p>Retira unha ficha.</p>`, ok:'Perfecto. Xa sabes todo o necesario.' },
+      deslizar:{ title:'1 · Bouger et laisser une trace', text:`<p>Les pions n’appartiennent à personne. Touche un pion, puis une case en ligne droite.</p><p>La case <b>qu’il quitte</b> prend ta couleur : c’est ton ${w.mark}.</p>`, ok:`C’est ça : tu as laissé ${w.first}.` },
+      bloqueo:{ title:'2 · Le pion bloqué', text:`<p>${N2} vient de jouer le pion entouré d’un cercle pointillé. <b>Tu ne peux pas le toucher ce tour-ci</b> : essaie.</p><p>Ensuite, joue n’importe quel autre.</p>`, ok:'Bien. Retiens : tu peux toujours jouer n’importe quel pion sauf le dernier joué par ton adversaire.' },
+      conectar:{ title:'3 · Relier', text:`<p>${N1} gagne en reliant <b>le haut et le bas</b> ; ${N2}, la gauche et la droite.</p><p>Il te manque une case. Laquelle ? Gagne maintenant.</p>`, ok:'Relié ! C’est comme ça qu’on gagne.' },
+      recuperar:{ title:`4 · Reprendre et ${w.sealV}`, text:`<p>Tu peux finir un déplacement sur une case de l’adversaire. Quand le pion la quitte, la case devient tienne et reste <b>${w.seal}</b> : plus personne ne peut la changer.</p><p>Joue le pion posé sur la case de ${N2} au centre.</p>`, ok:`${cap(w.seal)} ! (couleur intense). Ces cases valent de l’or : personne ne peut te les prendre.` },
+      reserva:{ title:'5 · La réserve', text:'<p>L’idée clé. Il te manque deux cases dans ta colonne.</p><p>Si tu laisses un pion sur une case dont tu as besoin, ton adversaire <b>ne pourra pas le bouger</b> à son tour, et au tour suivant tu le joues et tu peins. <b>Gagne en 2 coups.</b></p>', ok:'Voilà la réserve ! Elle gagne la plupart des parties.' },
+      final:{ title:'6 · La fin', text:`<p>Parfois aucun pion ne peut glisser (ils sont sur des cases à toi ou ${w.seal}s).</p><p>Tu <b>retires alors un pion</b> du plateau. S’il n’en reste plus, tu peins une case libre. Le plateau finit plein et il y a toujours un gagnant.</p><p>Retire un pion.</p>`, ok:'Parfait. Tu sais tout ce qu’il faut savoir.' },
     }),
-    tutReserve:n => `${n} non pode tocar a túa ficha reservada. Remata.`, tutAlmost:'Case. Preme «Repetir paso» e proba outra vez.',
-    rules:(N1, N2, w) => `<h2>Regras</h2><ol>
-      <li><b>${N1}</b> une arriba con abaixo e <b>${N2}</b> esquerda con dereita, cunha cadea de casas da súa cor.</li>
-      <li>Hai 4 fichas <b>neutrais</b>. Na túa quenda moves <b>calquera</b>, agás a que acaba de mover o teu rival (anel descontinuo).</li>
-      <li>A ficha esvara en liña recta por calquera das 6 direccións, sen saltar outras fichas, e acaba nunha casa <b>baleira ou do rival</b>.</li>
-      <li>Píntase da túa cor <b>a casa da que sae</b>. Se era do rival, <b>recupérala e queda ${w.seal}</b> para sempre.</li>
-      <li>Unha ficha sobre unha casa túa ou ${w.seal} non se pode mover.</li>
-      <li><b>Final:</b> se ninguén pode esvarar, retiras unha ficha (pintando a súa casa se se pode). Sen fichas, pintas unha casa libre.</li></ol>
-      <h3>Apertura</h3><p style="margin:0 0 6px"><b>Colocación:</b> antes de mover, os xogadores colocan as 4 fichas por quendas onde queiran. Quen comeza coloca a 1ª e a 3ª e fai o primeiro movemento. <b>Fixa:</b> as fichas comezan no centro.</p>
-      <h3>Modos de taboleiro</h3><p style="margin:0 0 6px"><b>Formas:</b> lago, illas ou esquinas recortadas. Son ocos que as fichas non cruzan.</p>
-      <p style="margin:0 0 6px"><b>Especiais:</b> rochas (nin se pintan nin se cruzan) e áncoras (quen a pinta déixaa ${w.seal} ao momento). Cambian de sitio en cada partida, sempre colocadas de xeito simétrico para que sexa xusto.</p>
-      <p class="muted" style="margin:0">Con ocos ou rochas pode pasar, moi rara vez, que ninguén poida unir. Entón gaña quen teña máis casas.</p>
-      <h3>Consello</h3><p style="margin:0">A ficha que acabas de mover non a pode tocar o teu rival. Déixaa onde queiras pintar na túa seguinte quenda: é a <b>reserva</b>.</p>`,
+    tutReserve:n => `${n} ne peut pas toucher ton pion réservé. Conclus.`, tutAlmost:'Presque. Appuie sur « Refaire l’étape » et réessaie.',
+    rules:(N1, N2, w) => `<h2>Règles</h2><ol>
+      <li><b>${N1}</b> relie le haut et le bas, <b>${N2}</b> la gauche et la droite, avec une chaîne de cases de sa couleur.</li>
+      <li>Il y a 4 pions <b>neutres</b>. À ton tour, tu joues <b>n’importe lequel</b>, sauf celui que ton adversaire vient de jouer (cercle pointillé).</li>
+      <li>Le pion glisse en ligne droite dans l’une des 6 directions, sans sauter d’autres pions, et s’arrête sur une case <b>vide ou adverse</b>.</li>
+      <li><b>La case qu’il quitte</b> prend ta couleur. Si elle était à l’adversaire, tu <b>la reprends et elle reste ${w.seal}</b> pour toujours.</li>
+      <li>Un pion posé sur une case à toi ou ${w.seal} ne peut pas bouger.</li>
+      <li><b>Fin :</b> si personne ne peut glisser, tu retires un pion (en peignant sa case si possible). Sans pions, tu peins une case libre.</li></ol>
+      <h3>Ouverture</h3><p style="margin:0 0 6px"><b>Placement :</b> avant de jouer, les joueurs posent les 4 pions à tour de rôle où ils veulent. Celui qui commence pose le 1er et le 3e et joue le premier coup. <b>Fixe :</b> les pions commencent au centre.</p>
+      <h3>Modes de plateau</h3><p style="margin:0 0 6px"><b>Formes :</b> lac, îles ou coins coupés. Ce sont des trous que les pions ne traversent pas.</p>
+      <p style="margin:0 0 6px"><b>Spéciales :</b> rochers (ni peints ni traversés) et ancres (qui la peint la laisse ${w.seal} aussitôt). Ils changent de place à chaque partie, toujours placés de façon symétrique pour rester équitables.</p>
+      <p class="muted" style="margin:0">Avec des trous ou des rochers, il peut arriver, très rarement, que personne ne puisse relier. Celui qui a le plus de cases gagne alors.</p>
+      <h3>Conseil</h3><p style="margin:0">Ton adversaire ne peut pas toucher le pion que tu viens de jouer. Laisse-le là où tu veux peindre au tour suivant : c’est la <b>réserve</b>.</p>`,
   },
+
+  de: {
+    code:'de', label:'DE', game:'Spur', tagline:'Steine ohne Besitzer',
+    tabs:{ play:'Spielen', puzzles:'Rätsel', tutorial:'Anleitung', rules:'Regeln' }, sound:'Ton', language:'Sprache',
+    themes:{
+      clasico:{ name:'Klassisch', t1:'Rot', t2:'Blau', w:{ seal:'versiegelt', sealV:'versiegeln', mark:'Spur', first:'deine erste Spur' } },
+      mareas:{ name:'Gezeiten', t1:'Koralle', t2:'Marine', w:{ seal:'verankert', sealV:'verankern', mark:'Kielwasser', first:'dein erstes Kielwasser' } },
+      nieve:{ name:'Schnee', t1:'Fuchs', t2:'Wolf', w:{ seal:'gefroren', sealV:'einfrieren', mark:'Pfotenabdruck', first:'deinen ersten Pfotenabdruck' } },
+      tinta:{ name:'Tinte', t1:'Zinnober', t2:'Indigo', w:{ seal:'gesiegelt', sealV:'siegeln', mark:'Pinselstrich', first:'deinen ersten Pinselstrich' } },
+      colmena:{ name:'Bienenstock', t1:'Honig', t2:'Lavendel', w:{ seal:'verdeckelt', sealV:'verdeckeln', mark:'Nektar', first:'deinen ersten Nektar' } },
+    },
+    st:{
+      replay:(i, n) => `Wiederholung · Zug ${i} von ${n}`, wins:n => `${n} gewinnt`, byCount:' (nach Feldern)', draw:'Unentschieden',
+      thinks:n => `${n} (Bot) denkt nach`, yourTurn:'Du bist dran', turnOf:n => `${n} ist dran`, yourTurnAs:n => `Du bist dran (${n})`,
+      place:(y, i, n) => `${y}: setze einen Stein (${i} von ${n})`, remove:y => `${y}: niemand kann gleiten, nimm einen Stein weg`, fill:y => `${y}: färbe ein freies Feld`,
+      locked:n => `${n} hat diesen Stein gerade gezogen: Du darfst ihn diese Runde nicht berühren.`, stuck:s => `Dieser Stein steht auf einem Feld, das dir gehört oder ${s} ist: Er kann nicht ziehen.`,
+    },
+    ban:{ youWon:'Du hast gewonnen!', botWins:'Der Bot gewinnt', wins:n => `${n} gewinnt`, byCount:'Nach Anzahl der Felder', connected:'Hat beide Seiten verbunden', moves:n => `${n} Züge`, again:'Noch eine Partie', replay:'Wiederholung ansehen' },
+    bar:{ newGame:'Neue Partie', undo:'Rückgängig', replay:'Wiederholung ansehen', started:n => `${n} hat begonnen · wechselt jede Partie`,
+      start:'Anfang', back:'Zurück', play:'Abspielen', pause:'Pause', fwd:'Vor', end:'Ende', exit:'Beenden',
+      hint:'Tipp', reset:'Neu starten', next:'Weiter', repeat:'Schritt wiederholen', finish:'Fertig' },
+    side:{ game:'Partie', rival:'Gegner', bot:'Bot', two:'2 Spieler', color:'Deine Farbe', level:'Stufe', levels:['Leicht', 'Mittel', 'Schwer', 'Experte'], theme:'Thema',
+      board:'Brett', size:'Größe', s7:'7×7 schnell', s9:'9×9 vollständig', shape:'Form', shapes:{ clasico:'Klassisch', lago:'See', islas:'Inseln', recortado:'Ecken weg' },
+      specials:'Spezialfelder', no:'Nein', rocks:'Felsen und Anker', opening:'Eröffnung', placement:'Setzen', fixed:'Fest',
+      note:'Eine Option zu ändern startet eine neue Partie.', you:'Du', botScore:'Bot', reminder:'Kurz erinnert',
+      remind:w => `Ziehe einen beliebigen Stein, außer dem, den dein Gegner gerade gezogen hat. Auf dem Feld, das er verlässt, bleibt deine ${w.mark === 'Spur' ? 'Spur' : 'Marke'} zurück. Gehörte es dem Gegner, holst du es zurück und es bleibt ${w.seal}. Verbinde deine beiden Seiten.`,
+      specNote:w => `<b>Fels:</b> wird weder gefärbt noch überquert. <b>Anker:</b> Wer ihn färbt, macht ihn sofort ${w.seal}.`,
+      holes:'Löcher im Brett gibt es nicht: Steine können sie nicht überqueren.' },
+    pz:{ title:i => `Rätsel ${i}`, plays:n => `${n} ist am Zug.`, win2:'Gewinne in 2 Zügen', anyway:', egal was der Gegner macht.',
+      tip:'Dein erster Zug muss einen unaufhaltsamen Sieg im nächsten vorbereiten.', count:(a, b) => `Rätsel (${a}/${b} gelöst)`,
+      note:'Sortiert von wenigen zu vielen Möglichkeiten pro Zug. Aus echten Bot-Partien entnommen und einzeln geprüft.',
+      good:'Guter Zug. Der Gegner verteidigt sich…', hmm:'Hmm… mal sehen, was der Gegner macht.', finish:'Jetzt mach es fertig: Du hast einen Gewinnzug.',
+      defended:'Der Gegner hat eine Verteidigung gefunden. Drück auf Neu starten und versuch eine andere Idee.', oppWon:'Der Gegner hat gewonnen. Drück auf Neu starten und versuch eine andere Idee.',
+      solved:'Gelöst!', notWin:'Dieser Zug gewinnt nicht. Drück auf Neu starten.' },
+    tut:(N1, N2, w) => ({
+      deslizar:{ title:'1 · Ziehen und eine Spur hinterlassen', text:`<p>Die Steine gehören niemandem. Tippe einen Stein an und dann ein Feld in gerader Linie.</p><p>Das Feld, <b>das er verlässt</b>, bekommt deine Farbe: Das ist dein${w.mark === 'Spur' ? 'e' : ''} ${w.mark}.</p>`, ok:`Genau: Du hast ${w.first} hinterlassen.` },
+      bloqueo:{ title:'2 · Der gesperrte Stein', text:`<p>${N2} hat gerade den Stein mit dem gestrichelten Ring gezogen. <b>Diese Runde darfst du ihn nicht berühren</b>: Probier es aus.</p><p>Zieh dann einen anderen.</p>`, ok:'Gut. Merke: Du darfst immer jeden Stein ziehen, außer dem letzten, den dein Gegner gezogen hat.' },
+      conectar:{ title:'3 · Verbinden', text:`<p>${N1} gewinnt, indem er <b>oben und unten</b> verbindet; ${N2} links und rechts.</p><p>Dir fehlt ein Feld. Welches? Gewinne jetzt.</p>`, ok:'Verbunden! So gewinnt man.' },
+      recuperar:{ title:`4 · Zurückholen und ${w.sealV}`, text:`<p>Du kannst einen Zug auf einem Feld des Gegners beenden. Wenn der Stein es verlässt, gehört das Feld dir und bleibt <b>${w.seal}</b>: Niemand kann es mehr ändern.</p><p>Zieh den Stein, der in der Mitte auf dem Feld von ${N2} steht.</p>`, ok:`${cap(w.seal)}! (kräftige Farbe). Diese Felder sind Gold wert: Niemand nimmt sie dir weg.` },
+      reserva:{ title:'5 · Die Reserve', text:'<p>Die wichtigste Idee. Dir fehlen zwei Felder in deiner Spalte.</p><p>Wenn du einen Stein auf ein Feld stellst, das du brauchst, <b>kann dein Gegner ihn</b> in seinem Zug <b>nicht bewegen</b>, und im nächsten Zug ziehst du ihn und färbst. <b>Gewinne in 2 Zügen.</b></p>', ok:'Das ist die Reserve! Damit gewinnt man die meisten Partien.' },
+      final:{ title:'6 · Das Ende', text:`<p>Manchmal kann kein Stein gleiten (sie stehen alle auf Feldern, die dir gehören oder ${w.seal} sind).</p><p>Dann <b>nimmst du einen Stein</b> vom Brett. Sind keine mehr übrig, färbst du ein freies Feld. Am Ende ist das Brett voll und es gibt immer einen Sieger.</p><p>Nimm einen Stein weg.</p>`, ok:'Perfekt. Jetzt weißt du alles, was du brauchst.' },
+    }),
+    tutReserve:n => `${n} kann deinen reservierten Stein nicht berühren. Mach es fertig.`, tutAlmost:'Fast. Drück auf „Schritt wiederholen“ und versuch es noch einmal.',
+    rules:(N1, N2, w) => `<h2>Regeln</h2><ol>
+      <li><b>${N1}</b> verbindet oben und unten, <b>${N2}</b> links und rechts, mit einer Kette von Feldern in der eigenen Farbe.</li>
+      <li>Es gibt 4 <b>neutrale</b> Steine. In deinem Zug ziehst du <b>einen beliebigen</b>, außer dem, den dein Gegner gerade gezogen hat (gestrichelter Ring).</li>
+      <li>Der Stein gleitet geradeaus in eine der 6 Richtungen, ohne andere Steine zu überspringen, und hält auf einem Feld, das <b>leer ist oder dem Gegner gehört</b>.</li>
+      <li><b>Das Feld, das er verlässt</b>, bekommt deine Farbe. Gehörte es dem Gegner, <b>holst du es zurück und es bleibt für immer ${w.seal}</b>.</li>
+      <li>Ein Stein auf einem Feld, das dir gehört oder ${w.seal} ist, kann nicht ziehen.</li>
+      <li><b>Ende:</b> Kann niemand gleiten, nimmst du einen Stein weg (und färbst sein Feld, wenn möglich). Ohne Steine färbst du ein freies Feld.</li></ol>
+      <h3>Eröffnung</h3><p style="margin:0 0 6px"><b>Setzen:</b> Vor dem ersten Zug setzen die Spieler abwechselnd die 4 Steine, wohin sie wollen. Wer beginnt, setzt den 1. und 3. Stein und macht den ersten Zug. <b>Fest:</b> Die Steine starten in der Mitte.</p>
+      <h3>Brettvarianten</h3><p style="margin:0 0 6px"><b>Formen:</b> See, Inseln oder abgeschnittene Ecken. Das sind Löcher, die Steine nicht überqueren.</p>
+      <p style="margin:0 0 6px"><b>Spezialfelder:</b> Felsen (weder färbbar noch überquerbar) und Anker (wer einen färbt, macht ihn sofort ${w.seal}). Sie wechseln jede Partie den Platz, immer symmetrisch verteilt, damit es fair bleibt.</p>
+      <p class="muted" style="margin:0">Mit Löchern oder Felsen kann es sehr selten passieren, dass niemand verbinden kann. Dann gewinnt, wer mehr Felder hat.</p>
+      <h3>Tipp</h3><p style="margin:0">Den Stein, den du gerade gezogen hast, darf dein Gegner nicht berühren. Lass ihn dort stehen, wo du im nächsten Zug färben willst: Das ist die <b>Reserve</b>.</p>`,
+  }
 };
 function detectLang(){
   const saved = store.get('lang', null); if (saved && LANGS[saved]) return saved;
   const n = (navigator.language || 'en').toLowerCase();
-  if (n.startsWith('gl')) return 'gl'; if (n.startsWith('es') || n.startsWith('ca') || n.startsWith('eu')) return 'es';
+  if (n.startsWith('es') || n.startsWith('gl') || n.startsWith('ca') || n.startsWith('eu')) return 'es';
+  if (n.startsWith('fr')) return 'fr'; if (n.startsWith('de')) return 'de';
   return 'en';
 }
 let L = LANGS[detectLang()];
