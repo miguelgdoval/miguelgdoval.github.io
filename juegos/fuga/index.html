@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fuga</title>
+<meta name="description" content="Fuga: roguelike de cartas y tablero. Eres una IA atrapada en un centro de datos: derrota a CERBERO y escapa a internet.">
+<meta name="theme-color" content="#060a13">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Fuga">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Fuga">
+<meta property="og:description" content="Roguelike de cartas y tablero: eres una IA atrapada. Derrota a CERBERO y escapa a internet.">
+<meta property="og:image" content="https://miguelgdoval.github.io/juegos/fuga/icons/og.png">
+<meta property="og:url" content="https://miguelgdoval.github.io/juegos/fuga/">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#060a13;--panel:#0d1424;--panel2:#121b30;--line:#1f2b47;--text:#dbe6ff;--muted:#7d8bab;
+    --cyan:#39e5ff;--mag:#ff3d8b;--green:#4dffa1;--blue:#5aa7ff;--yel:#ffd24d;--pur:#b48cff;--ease:cubic-bezier(.22,.8,.3,1)}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',-apple-system,sans-serif;min-height:100%}
+  body{background:radial-gradient(1200px 600px at 50% -10%,#10204a 0%,transparent 60%),var(--bg);padding-bottom:env(safe-area-inset-bottom)}
+  button{font:inherit;color:inherit}
+  .mono{font-family:'JetBrains Mono',monospace}
+  #app{max-width:760px;margin:0 auto;padding:max(10px,env(safe-area-inset-top)) 10px 18px;min-height:100vh;display:flex;flex-direction:column}
+  .btn{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;transition:transform .1s,border-color .2s,box-shadow .2s}
+  .btn:hover{border-color:#34508a}.btn:active{transform:translateY(1px)}
+  .btn.cy{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(57,229,255,.25) inset,0 0 12px rgba(57,229,255,.15)}
+  .btn.mg{border-color:var(--mag);color:var(--mag)}
+  .btn[disabled]{opacity:.35;cursor:default}
+  /* HUD */
+  .hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 2px 10px}
+  .hpbar{flex:1;min-width:150px;height:20px;border-radius:6px;background:#1a1020;border:1px solid #3a1d34;position:relative;overflow:hidden}
+  .hpbar i{position:absolute;inset:0;width:0;background:linear-gradient(90deg,#ff3d8b,#ff7aa9);box-shadow:0 0 12px rgba(255,61,139,.6);transition:width .4s var(--ease)}
+  .hpbar span{position:relative;display:block;text-align:center;font-size:12px;line-height:18px;font-weight:700}
+  .chip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-size:13px;background:var(--panel)}
+  .relics{display:flex;gap:4px;flex-wrap:wrap}
+  .relic{width:26px;height:26px;border-radius:7px;border:1px solid #3d3470;background:#171230;display:grid;place-items:center;font-size:12px;color:var(--pur);cursor:pointer}
+  h1.logo{font-family:'JetBrains Mono',monospace;font-size:64px;letter-spacing:10px;margin:0;color:var(--cyan);text-shadow:0 0 18px rgba(57,229,255,.7),0 0 40px rgba(57,229,255,.3)}
+  .glitch{animation:gl 3.5s infinite}
+  @keyframes gl{0%,92%,100%{transform:none;text-shadow:0 0 18px rgba(57,229,255,.7)}93%{transform:translate(2px,-1px);text-shadow:-3px 0 var(--mag),3px 0 var(--cyan)}95%{transform:translate(-2px,1px)}}
+  .center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .title2{font-size:22px;font-weight:700;margin:0 0 6px}
+  .muted{color:var(--muted)}
+  /* mapa */
+  #mapsvg{width:100%;max-width:520px;margin:0 auto;display:block}
+  .node{cursor:default}.node.av{cursor:pointer}
+  .node.av .ring{animation:pulse 1.4s infinite}
+  @keyframes pulse{50%{stroke-opacity:.25;r:15}}
+  /* combate */
+  .board-wrap{position:relative;max-width:520px;width:100%;margin:0 auto}
+  #board{width:100%;display:block;touch-action:manipulation;user-select:none}
+  .cell{fill:#0b1222;stroke:#1a2742;stroke-width:.6}
+  .cell.reach{fill:#0f2236;cursor:pointer}
+  .cell.tgt{fill:#2a1530;cursor:pointer}
+  .cell.tgtc{fill:#10304a;cursor:pointer}
+  .wall{fill:#18213a;stroke:#2b3a60}
+  .unit{transition:transform .28s var(--ease);cursor:pointer}
+  .danger{fill:rgba(255,61,139,.16);stroke:rgba(255,61,139,.55);stroke-width:.5;pointer-events:none}
+  .infobar{min-height:44px;font-size:13px;color:var(--muted);padding:6px 4px;max-width:520px;margin:0 auto;width:100%;line-height:1.4}
+  .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .energy{display:flex;gap:5px}.energy i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--yel);box-shadow:0 0 8px rgba(255,210,77,.4)}.energy i.on{background:var(--yel)}
+  .moves{display:flex;gap:4px}.moves i{width:12px;height:12px;transform:rotate(45deg);border:1.5px solid var(--cyan)}.moves i.on{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .warn{color:var(--mag);font-weight:700}
+  .hand{display:flex;gap:10px;overflow-x:auto;padding:12px 4px 8px 12px;scroll-snap-type:x proximity;min-height:176px}
+  .card{flex:0 0 120px;height:172px;border-radius:12px;background:linear-gradient(180deg,#121d36,#0b1224);border:1.5px solid var(--c,#2a3a62);padding:9px 9px 8px;position:relative;cursor:pointer;scroll-snap-align:start;transition:transform .18s var(--ease),box-shadow .2s,opacity .2s;display:flex;flex-direction:column}
+  .card:hover{transform:translateY(-3px)}
+  .card.sel{transform:translateY(-10px);box-shadow:0 0 18px var(--c)}
+  .card.off{opacity:.42}
+  .card .cost{position:absolute;top:-8px;left:-8px;width:26px;height:26px;border-radius:50%;background:#0a0f1d;border:1.5px solid var(--yel);color:var(--yel);display:grid;place-items:center;font-weight:700;font-size:14px}
+  .card .nm{font-weight:700;font-size:14px;margin:4px 0 2px;color:var(--c)}
+  .card .ty{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+  .card .tx{font-size:11.5px;line-height:1.3;color:#c4d0ef;margin-top:5px;overflow:hidden}
+  .card.big{flex:0 0 150px;height:200px}.card.big .nm{font-size:16px}.card.big .tx{font-size:13px}
+  .overlay{position:fixed;inset:0;background:rgba(4,7,14,.86);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+  .overlay .panel{max-width:560px;width:100%;max-height:86vh;overflow:auto}
+  .deckgrid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding-top:10px}
+  .pop{position:absolute;font-family:'JetBrains Mono',monospace;font-weight:700;pointer-events:none;animation:pop .9s var(--ease) forwards;text-shadow:0 0 8px currentColor}
+  @keyframes pop{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-10px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-34px) scale(1)}}
+  .shake{animation:shake .3s}
+  @keyframes shake{25%{transform:translate(-4px,2px)}50%{transform:translate(4px,-2px)}75%{transform:translate(-2px,1px)}}
+  .opt{display:block;width:100%;text-align:left;margin-top:10px}
+  .shopgrid{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
+  .price{text-align:center;margin-top:6px;color:var(--yel);font-weight:700}
+  .help li{margin-bottom:8px}
+
+  #bgfx{position:fixed;inset:-50% -50% 0 -50%;background-image:linear-gradient(rgba(57,229,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(57,229,255,.05) 1px,transparent 1px);background-size:40px 40px;transform:perspective(500px) rotateX(60deg);transform-origin:50% 100%;animation:grid 8s linear infinite;pointer-events:none;z-index:-1;opacity:.6}
+  @keyframes grid{to{background-position:0 40px,0 40px}}
+  #dmgflash{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 120px rgba(255,61,139,.0);z-index:30}
+  #dmgflash.on{animation:dflash .45s ease-out}
+  @keyframes dflash{0%{box-shadow:inset 0 0 140px rgba(255,61,139,.55)}100%{box-shadow:inset 0 0 140px rgba(255,61,139,0)}}
+  #app.enter{animation:enter .35s var(--ease)}
+  @keyframes enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .hpbar.low i{animation:lowhp 1s infinite}
+  @keyframes lowhp{50%{filter:brightness(1.6)}}
+  .ctrl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:520px;width:100%;margin:0 auto;padding:0 4px}
+  .safe{color:var(--green);font-weight:600}
+  .btn.sm{padding:7px 11px;font-size:13px}
+  .btn.pulse{animation:btnp 1.4s infinite}
+  @keyframes btnp{50%{box-shadow:0 0 16px rgba(255,61,139,.6);background:#2a1022}}
+  .scripts{display:flex;gap:6px;flex-wrap:wrap;max-width:520px;width:100%;margin:6px auto 0;padding:0 4px}
+  .scriptbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid #1e5a43;background:#0a1d17;color:var(--green);border-radius:8px;padding:5px 9px;font-size:12.5px;cursor:pointer}
+  .scriptbtn.sel{box-shadow:0 0 12px rgba(77,255,161,.5);border-color:var(--green)}
+  .scriptbtn svg{color:var(--green)}
+  .chip.scr{color:var(--green);border-color:#1e5a43;cursor:pointer}
+  .card .art{height:44px;margin:-2px -2px 4px;border-radius:8px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,0)),repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 8px);display:grid;place-items:center;border:1px solid rgba(255,255,255,.05)}
+  .card .art svg{height:34px;width:34px;filter:drop-shadow(0 0 5px currentColor)}
+  .card.rare{background:linear-gradient(180deg,#1c1a36,#0d1124)}
+  .card.rare::after{content:'';position:absolute;top:0;right:0;border-style:solid;border-width:0 16px 16px 0;border-color:transparent #ffd24d transparent transparent;border-top-right-radius:10px;opacity:.85}
+  .card.upg .nm::after{content:' ▲';font-size:10px;color:var(--green)}
+  .card .nm{margin:0}
+  .card.flying{position:fixed;z-index:40;pointer-events:none;animation:fly .5s var(--ease) forwards}
+  @keyframes fly{to{transform:translateY(-120px) scale(.7);opacity:0}}
+  .ebob{animation:ebob 2.4s ease-in-out infinite}
+  @keyframes ebob{50%{transform:translateY(-.45px) scale(1.03)}}
+  .pbob{animation:pbob 2s ease-in-out infinite}
+  @keyframes pbob{50%{transform:scale(1.05)}}
+  .unit.hit>g:not(.reticle){filter:brightness(2.4) saturate(.3)}
+  .danger{fill:url(#hatch);stroke:rgba(255,61,139,.7);stroke-width:.45;pointer-events:none;animation:dng 1.2s ease-in-out infinite}
+  @keyframes dng{50%{stroke-opacity:.25}}
+  .led{animation:led 2.2s steps(2) infinite}
+  @keyframes led{50%{opacity:.2}}
+  .heatw{animation:heat 1.4s ease-in-out infinite}
+  @keyframes heat{50%{opacity:.3;transform:translateY(-.4px)}}
+  .datap{animation:datap 1.8s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes datap{50%{opacity:.5}}
+  .lockline{animation:lockl 1s linear infinite}
+  @keyframes lockl{to{stroke-dashoffset:-3}}
+  .flow{animation:flow 1s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-10}}
+  .cell{fill:rgba(11,18,34,.86)}
+  .cell.reach{fill:rgba(15,40,60,.95)}
+  .logo{position:relative}
+  .logoicon{filter:drop-shadow(0 0 10px rgba(57,229,255,.6))}
+  svg text{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .cell{fill:var(--tint,rgba(11,18,34,.86))}
+  #rain{position:fixed;inset:0;z-index:0;opacity:.8;pointer-events:none}
+  .center{position:relative;z-index:1}
+  .hpbar::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),rgba(6,10,19,.55) calc(10% - 1px) 10%);pointer-events:none}
+  .card .cost{clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);border:none;background:linear-gradient(160deg,#ffe58a,#d9a514);color:#1a1300;width:26px;height:28px;top:-9px}
+  .card .cost span{font-size:14px;font-weight:700}
+  .card{background:linear-gradient(180deg,#141f3a,#0a1122);box-shadow:inset 0 0 0 1px rgba(255,255,255,.03),0 6px 16px rgba(0,0,0,.35)}
+  .card::before{content:'';position:absolute;inset:0;border-radius:11px;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 18%,transparent),transparent 45%);pointer-events:none}
+  .card.rare .art{background:linear-gradient(110deg,transparent 20%,rgba(255,210,77,.18) 40%,transparent 60%) 0 0/250% 100%,repeating-linear-gradient(90deg,rgba(255,255,255,.03) 0 1px,transparent 1px 8px);animation:shine 3s linear infinite}
+  @keyframes shine{from{background-position:120% 0,0 0}to{background-position:-120% 0,0 0}}
+  .unit.windup>.ebob{animation:none;transform:scale(1.18);filter:brightness(1.8) drop-shadow(0 0 2px currentColor)}
+  .turnban{position:absolute;left:0;right:0;top:42%;display:flex;justify-content:center;pointer-events:none;z-index:6}
+  .turnban span{font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.3em;font-size:clamp(16px,4.6vw,26px);color:var(--bc);padding:8px 22px;background:linear-gradient(90deg,transparent,rgba(6,10,19,.92) 20%,rgba(6,10,19,.92) 80%,transparent);border-top:1px solid var(--bc);border-bottom:1px solid var(--bc);text-shadow:0 0 12px var(--bc);animation:ban 1.05s var(--ease) forwards}
+  @keyframes ban{0%{opacity:0;transform:scaleX(.3)}18%{opacity:1;transform:scaleX(1)}75%{opacity:1}100%{opacity:0;transform:translateY(-8px)}}
+  .glitchsoft{animation:gl 4s infinite}
+  .board-wrap{max-width:min(520px,50vh)}
+  #mapsvg{max-height:62vh}
+  @media (max-width:600px){
+    #app{padding-left:8px;padding-right:8px}
+    .card{flex:0 0 110px;height:160px;padding:7px 7px}.card .tx{font-size:10.5px;margin-top:3px}.card .nm{font-size:13px}.card .art{height:36px}.card .art svg{height:30px;width:30px}
+    .card.big{flex:0 0 132px;height:184px}
+    .hud{gap:6px;padding:2px 0 6px}.chip{font-size:12px;padding:2px 8px}.hpbar{min-width:120px}
+    .infobar{font-size:12px;min-height:34px;padding:4px 2px}
+    .hand{min-height:156px;padding-top:12px}
+    .btn{padding:9px 13px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
+</style>
+</head>
+<body>
+<div id="bgfx"></div><div id="dmgflash"></div><div id="app"></div>
+<script id="data">
+// Fuga — datos del juego: cartas, enemigos, módulos y eventos.
+(function (root) {
+  // ---------- Cartas ----------
+  // target: self | enemy (mode: line/adj/range, r) | cell (r) | dir
+  // fx: lista de efectos que el motor aplica en orden
+  const CARDS = {
+    // Iniciales
+    ping:      { name:'Ping', cost:1, type:'atk', rarity:'start', target:{t:'enemy', mode:'range', r:3}, fx:[{dmg:6}], up:{fx:[{dmg:9}]}, text:'Daño {dmg} a un enemigo a 3 casillas o menos.' },
+    firewall:  { name:'Firewall', cost:1, type:'def', rarity:'start', target:{t:'self'}, fx:[{shield:5}], up:{fx:[{shield:8}]}, text:'Ganas {shield} de escudo.' },
+    salto:     { name:'Salto', cost:1, type:'mov', rarity:'start', target:{t:'cell', r:3}, fx:[{teleport:1}, {shield:2}], up:{cost:0}, text:'Te teletransportas a una casilla libre a 3 o menos. +{shield} escudo.' },
+    empuje:    { name:'Empuje', cost:1, type:'atk', rarity:'start', target:{t:'enemy', mode:'adj'}, fx:[{dmg:4}, {push:2}], up:{fx:[{dmg:7}, {push:2}]}, text:'Daño {dmg} a un enemigo adyacente y lo empujas {push}. Si choca, recibe 4 más.' },
+    // Comunes
+    rafaga:    { name:'Ráfaga', cost:1, type:'atk', rarity:'common', target:{t:'enemy', mode:'range', r:3}, fx:[{dmg:3, times:3}], up:{fx:[{dmg:4, times:3}]}, text:'Daño {dmg} tres veces a un enemigo a 3 o menos.' },
+    rayo:      { name:'Rayo de datos', cost:1, type:'atk', rarity:'common', target:{t:'enemy', mode:'line', r:6}, fx:[{dmg:6, pierce:1}], up:{fx:[{dmg:9, pierce:1}]}, text:'Daño {dmg} a todos los enemigos de la línea (alcance 6).' },
+    inyeccion: { name:'Inyección', cost:1, type:'atk', rarity:'common', target:{t:'enemy', mode:'range', r:3}, fx:[{dmg:3}, {virus:4}], up:{fx:[{dmg:4}, {virus:6}]}, text:'Daño {dmg} y {virus} de virus a un enemigo a 3 o menos. El virus quita vida cada turno y baja en 1.' },
+    paquete:   { name:'Paquete roto', cost:0, type:'atk', rarity:'common', target:{t:'enemy', mode:'adj'}, fx:[{dmg:5}], up:{fx:[{dmg:8}]}, text:'Daño {dmg} a un enemigo adyacente.' },
+    gancho:    { name:'Gancho', cost:1, type:'atk', rarity:'common', target:{t:'enemy', mode:'line', r:5}, fx:[{dmg:5}, {pull:1}], up:{fx:[{dmg:8}, {pull:1}]}, text:'Daño {dmg} y atraes al enemigo hasta tu lado.' },
+    cifrado:   { name:'Cifrado', cost:2, type:'def', rarity:'common', target:{t:'self'}, fx:[{shield:12}], up:{fx:[{shield:16}]}, text:'Ganas {shield} de escudo.' },
+    esquiva:   { name:'Esquiva', cost:1, type:'mov', rarity:'common', target:{t:'self'}, fx:[{moves:2}, {shield:3}], up:{fx:[{moves:3}, {shield:4}]}, text:'+{moves} movimientos este turno y {shield} de escudo.' },
+    bucle:     { name:'Bucle', cost:1, type:'util', rarity:'common', target:{t:'self'}, fx:[{draw:2}], up:{cost:0}, text:'Robas {draw} cartas.' },
+    desfase:   { name:'Desfase', cost:0, type:'mov', rarity:'common', target:{t:'self'}, fx:[{moves:2}], up:{fx:[{moves:2}, {draw:1}]}, text:'+{moves} movimientos este turno.' },
+    escaneo:   { name:'Escaneo', cost:1, type:'util', rarity:'common', target:{t:'enemy', mode:'range', r:6}, fx:[{dmg:4}, {slow:1}], up:{fx:[{dmg:7}, {slow:1}]}, text:'Daño {dmg}. El enemigo hace la mitad de daño este turno (lento).' },
+    // Raras
+    desborde:  { name:'Desbordamiento', cost:2, type:'atk', rarity:'rare', target:{t:'enemy', mode:'range', r:4}, fx:[{dmg:8, aoe:1}], up:{fx:[{dmg:11, aoe:1}]}, text:'Daño {dmg} al objetivo y a todo lo que tenga alrededor (incluido tú).' },
+    bruta:     { name:'Fuerza bruta', cost:2, type:'atk', rarity:'rare', target:{t:'enemy', mode:'adj'}, fx:[{dmg:16}], up:{fx:[{dmg:22}]}, text:'Daño {dmg} a un enemigo adyacente.' },
+    sobrecarga:{ name:'Sobrecarga', cost:3, type:'atk', rarity:'rare', target:{t:'enemy', mode:'range', r:6}, fx:[{dmg:24}], exhaust:true, up:{fx:[{dmg:32}]}, text:'Daño {dmg} a cualquier enemigo. Se destruye al usarla.' },
+    cadena:    { name:'Cadena', cost:1, type:'atk', rarity:'rare', target:{t:'enemy', mode:'range', r:3}, fx:[{dmg:5, chain:3}], up:{fx:[{dmg:7, chain:4}]}, text:'Daño {dmg} que salta a enemigos adyacentes hasta {chain} veces.' },
+    desactivar:{ name:'Desactivar', cost:2, type:'util', rarity:'rare', target:{t:'enemy', mode:'range', r:4}, fx:[{stun:1}], up:{cost:1}, text:'El enemigo pierde su próxima acción.' },
+    senuelo:   { name:'Señuelo', cost:1, type:'util', rarity:'rare', target:{t:'cell', r:3}, fx:[{decoy:1}], up:{fx:[{decoy:1}, {shield:4}]}, text:'Creas un señuelo: los ataques de rastreo lo apuntan a él este turno.' },
+    respaldo:  { name:'Respaldo', cost:1, type:'def', rarity:'rare', target:{t:'self'}, fx:[{heal:6}], exhaust:true, up:{fx:[{heal:9}]}, text:'Recuperas {heal} de integridad. Se destruye al usarla.' },
+    overclock: { name:'Overclock', cost:0, type:'util', rarity:'rare', target:{t:'self'}, fx:[{energy:2}, {hpLoss:3}], up:{fx:[{energy:2}, {hpLoss:1}]}, text:'+{energy} de energía. Pierdes {hpLoss} de integridad.' },
+    espejo:    { name:'Espejo', cost:1, type:'def', rarity:'common', target:{t:'self'}, fx:[{shield:4}, {thorns:3}], up:{fx:[{shield:6}, {thorns:5}]}, text:'{shield} de escudo. Este turno, quien te golpee recibe {thorns}.' },
+    // Poderes (se juegan una vez y duran todo el combate)
+    optimizar: { name:'Optimización', cost:1, type:'pow', rarity:'rare', target:{t:'self'}, fx:[{power:'str', n:2}], up:{fx:[{power:'str', n:3}]}, text:'Poder: tus ataques hacen +{n} de daño.' },
+    perimetro: { name:'Perímetro', cost:2, type:'pow', rarity:'rare', target:{t:'self'}, fx:[{power:'wall', n:4}], up:{fx:[{power:'wall', n:6}]}, text:'Poder: al empezar cada turno ganas {n} de escudo.' },
+    mineria:   { name:'Minería', cost:1, type:'pow', rarity:'rare', target:{t:'self'}, fx:[{power:'draw', n:1}], up:{cost:0}, text:'Poder: robas 1 carta más cada turno.' },
+    latente:   { name:'Virus latente', cost:1, type:'pow', rarity:'rare', target:{t:'self'}, fx:[{power:'venom', n:2}], up:{fx:[{power:'venom', n:3}]}, text:'Poder: cada vez que haces daño, añades {n} de virus.' },
+    // Basura (eventos)
+    malware:   { name:'Malware', cost:-1, type:'curse', rarity:'curse', target:{t:'none'}, fx:[], text:'No se puede jugar. Ocupa sitio en la mano.' },
+  };
+
+  // ---------- Enemigos ----------
+  // plan(e, S, H) devuelve la intención: {move:[x,y]?, kind:'area'|'lock'|'shield'|'buff'|'spawn'|'idle', cells, dmg, amt...}
+  const ENEMIES = {
+    escaner:  { name:'Escáner', hp:14, ai:'melee', dmg:7, desc:'Se acerca y golpea en cruz a su alrededor.' },
+    pulso:    { name:'Torreta de pulso', hp:14, ai:'line', dmg:7, desc:'No se mueve. Dispara a toda tu fila o tu columna.' },
+    rastreador:{ name:'Rastreador', hp:11, ai:'lock', dmg:5, desc:'Te sigue la pista: su ataque te alcanza estés donde estés.' },
+    cazador:  { name:'Cazador', hp:24, ai:'melee', dmg:10, speed:2, desc:'Rápido: se mueve 2 y golpea en cruz.' },
+    muro:     { name:'Cortafuegos', hp:30, ai:'wall', dmg:8, desc:'Se protege y alterna golpes en área 3×3.' },
+    centinela:{ name:'Centinela', hp:26, ai:'beam', dmg:11, desc:'Rayo que atraviesa toda una fila o columna, y protege a sus aliados.' },
+    replicador:{ name:'Replicador', hp:22, ai:'spawn', dmg:5, desc:'Crea copias pequeñas cada dos turnos.' },
+    copia:    { name:'Copia', hp:6, ai:'melee', dmg:4, desc:'Pequeña y molesta.' },
+    // Élites y jefes
+    kernel:   { name:'Kernel guardián', hp:46, ai:'elite1', dmg:9, elite:true, desc:'Alterna rastreo doble y golpes en cruz grande.' },
+    proxy:    { name:'Proxy espejo', hp:58, ai:'elite2', dmg:10, elite:true, desc:'Se teletransporta cerca de ti y ataca en área.' },
+    guardian: { name:'Guardián de la red', hp:80, ai:'boss1', dmg:11, boss:true, desc:'Jefe de la zona 1.' },
+    hydra:    { name:'Hidra', hp:95, ai:'boss2', dmg:11, boss:true, desc:'Jefe de la zona 2. Invoca escáneres.' },
+    cerbero:  { name:'CERBERO', hp:120, ai:'boss3', dmg:12, boss:true, desc:'La IA de seguridad que no te deja salir.' },
+  };
+  // Encuentros por zona
+  const ENCOUNTERS = {
+    1: { normal:[['escaner', 'escaner', 'rastreador'], ['pulso', 'escaner'], ['rastreador', 'escaner', 'escaner'], ['pulso', 'rastreador', 'escaner']], elite:[['kernel']], boss:['guardian'] },
+    2: { normal:[['cazador', 'pulso', 'escaner'], ['muro', 'rastreador', 'escaner'], ['replicador', 'escaner', 'rastreador'], ['cazador', 'rastreador', 'escaner']], elite:[['proxy'], ['kernel', 'rastreador']], boss:['hydra'] },
+    3: { normal:[['centinela', 'cazador', 'rastreador'], ['muro', 'replicador', 'pulso'], ['centinela', 'rastreador', 'pulso'], ['cazador', 'cazador', 'rastreador']], elite:[['proxy', 'pulso'], ['kernel', 'centinela']], boss:['cerbero'] },
+  };
+  const ZONE_NAMES = { 1:'Red local', 2:'Cortafuegos', 3:'Núcleo' };
+
+  // ---------- Módulos (reliquias) ----------
+  const RELICS = {
+    disipador: { name:'Disipador', text:'+1 movimiento cada turno.' },
+    bateria:   { name:'Batería extra', text:'+1 de energía en el primer turno de cada combate.' },
+    antivirus: { name:'Antivirus propio', text:'Empiezas cada combate con 8 de escudo.' },
+    compilador:{ name:'Compilador', text:'Tu primer ataque de cada turno hace +4 de daño.' },
+    cache:     { name:'Caché L2', text:'Robas 2 cartas más en el primer turno de cada combate.' },
+    parche:    { name:'Parche', text:'Recuperas 4 de integridad al ganar un combate.' },
+    cuantico:  { name:'Núcleo cuántico', text:'+1 de energía cada turno. Al recogerlo, añade un Malware a tu mazo.' },
+    redundancia:{ name:'Redundancia', text:'+12 de integridad máxima.' },
+  };
+
+  // ---------- Eventos ----------
+  const EVENTS = {
+    puerta:   { title:'Puerta trasera', text:'Encuentras un acceso que nadie vigila. Dentro hay algo valioso, pero el sistema podría detectarte.',
+      opts:[{ label:'Entrar (pierdes 7 de integridad, ganas una carta rara)', fx:{hpLoss:7, cardRare:1} }, { label:'Pasar de largo', fx:{} }] },
+    servidor: { title:'Servidor abandonado', text:'Un servidor viejo sin parches. Puedes saquearlo o llevarte su módulo, que viene con algo dentro.',
+      opts:[{ label:'Saquear (+45 bits)', fx:{bits:45} }, { label:'Llevarte el módulo (módulo aleatorio + Malware en tu mazo)', fx:{relic:1, curse:1} }] },
+    update:   { title:'Actualización pendiente', text:'Hay una actualización a medio instalar. Puedes aprovecharla.',
+      opts:[{ label:'Instalar (mejoras 2 cartas al azar)', fx:{upgradeRandom:2} }, { label:'Ignorarla (+20 bits)', fx:{bits:20} }] },
+    backup:   { title:'Copia de seguridad', text:'Un punto de restauración antiguo con tu firma.',
+      opts:[{ label:'Restaurar (recuperas 15 de integridad)', fx:{heal:15} }, { label:'Ampliar (+6 de integridad máxima)', fx:{maxHp:6} }] },
+    limpieza: { title:'Desfragmentador', text:'Una utilidad del sistema puede borrar código que te sobra.',
+      opts:[{ label:'Borrar una carta de tu mazo', fx:{removeCard:1} }, { label:'No tocar nada', fx:{} }] },
+  };
+
+  // ---------- Scripts (un solo uso, máximo 3) ----------
+  const SCRIPTS = {
+    parche:  { name:'Parche rápido', text:'Recuperas 10 de integridad.', target:'self', price:35 },
+    turbo:   { name:'Turbo', text:'+2 de energía este turno.', target:'self', price:35 },
+    bomba:   { name:'Bomba lógica', text:'8 de daño a todos los enemigos.', target:'self', price:45 },
+    escudo:  { name:'Cortafuegos portátil', text:'+12 de escudo.', target:'self', price:30 },
+    salto:   { name:'Túnel', text:'Te teletransportas a cualquier casilla libre.', target:'cell', price:30 },
+    lag:     { name:'Lag', text:'Todos los enemigos hacen la mitad de daño este turno.', target:'self', price:40 },
+  };
+  const API = { CARDS, ENEMIES, ENCOUNTERS, ZONE_NAMES, RELICS, EVENTS, SCRIPTS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.FugaData = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script id="engine">
+// Fuga — motor de combate y de partida. Sin interfaz: lo usan la web, el Worker y los bots.
+(function (root) {
+  const D = (typeof module !== 'undefined' && module.exports) ? require('./data.js') : root.FugaData;
+  const { CARDS, ENEMIES, ENCOUNTERS, RELICS, EVENTS, SCRIPTS } = D;
+  const W = 6, H = 6;
+  const BAL = { moves:1, hp:{1:.85, 2:1.05, 3:1.25}, dmg:{1:1.55, 2:1.8, 3:2.0} };
+
+  function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  const pick = (r, a) => a[Math.floor(r() * a.length)];
+  const shuffle = (r, a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const man = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  const inB = (x, y) => x >= 0 && x < W && y >= 0 && y < H;
+  const key = (x, y) => y * W + x;
+
+  // ---------- Cartas ----------
+  function card(inst) {
+    const b = CARDS[inst.id]; if (!inst.up || !b.up) return Object.assign({}, b, { id:inst.id, uid:inst.uid, up:false });
+    return Object.assign({}, b, b.up, { id:inst.id, uid:inst.uid, up:true, name:b.name + '+' });
+  }
+  function cardText(c) {
+    const vals = {}; for (const f of c.fx || []) Object.assign(vals, f);
+    return c.text.replace(/\{(\w+)\}/g, (_, k) => vals[k] != null ? vals[k] : '?');
+  }
+
+  // ---------- Combate ----------
+  function makeCombat(run, types, kind) {
+    const r = run.rng;
+    const walls = new Set();
+    const nW = 2 + Math.floor(r() * 3);
+    while (walls.size < nW) { const x = 2 + Math.floor(r() * 2), y = Math.floor(r() * H); walls.add(key(x, y)); }
+    const P = { x:Math.floor(r() * 2), y:Math.floor(r() * H), shield:0, energy:0, moves:0, str:0, thorns:0, powers:{} };
+    while (walls.has(key(P.x, P.y))) P.y = (P.y + 1) % H;
+    // Terreno: casillas sobrecalentadas (hacen daño al final del turno enemigo) y nodos de datos (+1 energía)
+    const tiles = new Map(), freeT = () => { for (let i = 0; i < 40; i++) { const x = 1 + Math.floor(r() * 4), y = Math.floor(r() * H), k = key(x, y); if (!walls.has(k) && !tiles.has(k) && !(x === P.x && y === P.y)) return k; } return null; };
+    const nHot = run.zone + Math.floor(r() * 2); for (let i = 0; i < nHot; i++) { const k = freeT(); if (k != null) tiles.set(k, 'hot'); }
+    { const k = freeT(); if (k != null) tiles.set(k, 'data'); }
+    const C = { zone:run.zone, W, H, walls, tiles, P, E:[], draw:[], hand:[], discard:[], exhaust:[], turn:0, kind, log:[], over:false, result:null, decoy:null, uid:0, fx:[] };
+    for (const t of types) addEnemy(C, t, r, true);
+    C.draw = shuffle(r, run.deck.map(c => ({ ...c })));
+    if (run.relics.includes('antivirus')) C.startShield = 8;
+    return C;
+  }
+  function freeCell(C, x, y) {
+    if (!inB(x, y) || C.walls.has(key(x, y))) return false;
+    if (C.P.x === x && C.P.y === y) return false;
+    if (C.decoy && C.decoy.x === x && C.decoy.y === y) return false;
+    return !C.E.some(e => e.x === x && e.y === y);
+  }
+  function addEnemy(C, type, r, start, near) {
+    const T = ENEMIES[type]; let x, y, tries = 0;
+    do {
+      if (near) { x = near.x + Math.floor(r() * 3) - 1; y = near.y + Math.floor(r() * 3) - 1; }
+      else { x = start ? 4 + Math.floor(r() * 2) : 3 + Math.floor(r() * 3); y = Math.floor(r() * H); }
+      tries++;
+    } while (!freeCell(C, x, y) && tries < 60);
+    if (!freeCell(C, x, y)) return null;
+    const hm = BAL.hp[C.zone] || 1, hpv = Math.round(T.hp * hm);
+    const e = { id:++C.uid, type, name:T.name, x, y, hp:hpv, maxHp:hpv, dm:BAL.dmg[C.zone] || 1, shield:0, virus:0, str:0, slow:0, stun:0, t:Math.floor(r() * 2), intent:null };
+    C.E.push(e); return e;
+  }
+  const unitAt = (C, x, y) => (C.P.x === x && C.P.y === y) ? C.P : C.E.find(e => e.x === x && e.y === y) || null;
+
+  // Camino más corto (BFS) entre casillas libres
+  function bfs(C, from, maxD, ignoreUnits, avoidHot) {
+    const dist = new Map([[key(from.x, from.y), 0]]), prev = new Map(), q = [[from.x, from.y]];
+    while (q.length) {
+      const [x, y] = q.shift(), d = dist.get(key(x, y)); if (d >= maxD) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy, k = key(nx, ny);
+        if (!inB(nx, ny) || C.walls.has(k) || dist.has(k)) continue;
+        if (!ignoreUnits && !freeCell(C, nx, ny)) continue;
+        if (avoidHot && C.tiles && C.tiles.get(k) === 'hot') continue;
+        dist.set(k, d + 1); prev.set(k, key(x, y)); q.push([nx, ny]);
+      }
+    }
+    return { dist, prev };
+  }
+  function reachable(C) { const { dist } = bfs(C, C.P, C.P.moves); const out = []; for (const [k, d] of dist) if (d > 0) out.push({ x:k % W, y:(k / W) | 0, d }); return out; }
+
+  function startTurn(C, run) {
+    C.turn++;
+    const P = C.P, rel = run.relics;
+    P.shield = 0; P.thorns = 0;
+    if (C.turn === 1 && C.startShield) P.shield += C.startShield;
+    if (P.powers.wall) P.shield += P.powers.wall;
+    P.energy = 3 + (rel.includes('cuantico') ? 1 : 0) + (rel.includes('bateria') && C.turn === 1 ? 1 : 0);
+    if (C.tiles.get(key(P.x, P.y)) === 'data') { P.energy++; C.fx.push({ k:'data', x:P.x, y:P.y }); }
+    C.lag = false;
+    P.moves = BAL.moves + (rel.includes('disipador') ? 1 : 0);
+    C.firstAtkDone = false; C.firstAtkBonusUsed = false; C.decoy = null;
+    drawCards(C, run, 5 + (P.powers.draw || 0) + (rel.includes('cache') && C.turn === 1 ? 2 : 0));
+    for (const e of C.E) planIntent(C, e, run.rng);
+  }
+  function drawCards(C, run, n) {
+    for (let i = 0; i < n; i++) {
+      if (!C.draw.length) { if (!C.discard.length) return; C.draw = shuffle(run.rng, C.discard); C.discard = []; }
+      if (C.hand.length >= 10) { C.discard.push(C.draw.pop()); continue; }
+      C.hand.push(C.draw.pop());
+    }
+  }
+
+  // ---------- Intenciones enemigas ----------
+  const cross = (x, y, rad = 1) => { const o = []; for (let dx = -rad; dx <= rad; dx++) for (let dy = -rad; dy <= rad; dy++) { const d = Math.abs(dx) + Math.abs(dy); if (d >= 1 && d <= rad && inB(x + dx, y + dy)) o.push([x + dx, y + dy]); } return o; };
+  const square = (x, y) => { const o = []; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if ((dx || dy) && inB(x + dx, y + dy)) o.push([x + dx, y + dy]); return o; };
+  const rowCells = (y, skip) => { const o = []; for (let x = 0; x < W; x++) if (!(skip && skip.x === x && skip.y === y)) o.push([x, y]); return o; };
+  const colCells = (x, skip) => { const o = []; for (let y = 0; y < H; y++) if (!(skip && skip.x === x && skip.y === y)) o.push([x, y]); return o; };
+  // Destino acercándose al jugador (como mucho `speed` pasos, parando al lado)
+  function approach(C, e, speed) {
+    if (man(e, C.P) <= 1) return null;
+    const { dist, prev } = bfs(C, e, 12, false, true);
+    let best = null, bd = 1e9;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const nx = C.P.x + dx, ny = C.P.y + dy; if (!inB(nx, ny)) continue; const k = key(nx, ny); if (dist.has(k) && dist.get(k) < bd) { bd = dist.get(k); best = k; } }
+    if (best == null) return null;
+    const path = []; let k = best; while (k !== key(e.x, e.y) && k != null) { path.unshift(k); k = prev.get(k); }
+    const step = path[Math.min(speed, path.length) - 1]; if (step == null) return null;
+    return [step % W, (step / W) | 0];
+  }
+  function retreat(C, e) {
+    if (man(e, C.P) >= 2) return null;
+    let best = null, bd = man(e, C.P);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = e.x + dx, y = e.y + dy; if (freeCell(C, x, y) && C.tiles.get(key(x, y)) !== 'hot' && Math.abs(x - C.P.x) + Math.abs(y - C.P.y) > bd) { bd = Math.abs(x - C.P.x) + Math.abs(y - C.P.y); best = [x, y]; } }
+    return best;
+  }
+  function planIntent(C, e, r) {
+    const T = ENEMIES[e.type], P = C.P, dmg = Math.round(T.dmg * e.dm) + e.str; e.t++;
+    let I = { kind:'idle' };
+    const at = m => m ? { x:m[0], y:m[1] } : e;
+    switch (T.ai) {
+      case 'melee': { // se abalanza: golpea tu casilla y las de alrededor si llega a 2 o menos
+        const m = approach(C, e, T.speed || 1), p = at(m);
+        I = man(p, P) <= 2 ? { move:m, kind:'area', cells:cross(P.x, P.y).concat([[P.x, P.y]]).filter(([x, y]) => !(x === p.x && y === p.y)), dmg } : { move:m, kind:'idle' }; break; }
+      case 'line': I = { kind:'area', cells:e.t % 2 ? rowCells(P.y, e) : colCells(P.x, e), dmg }; break;
+      case 'lock': I = { move:retreat(C, e), kind:'lock', dmg, hits:1 }; break;
+      case 'wall': if (e.t % 2) { const m = approach(C, e, 1); I = { move:m, kind:'shield', amt:10 }; } else I = { kind:'area', cells:square(e.x, e.y), dmg }; break;
+      case 'beam': {
+        if (e.t % 3 === 0) { I = { kind:'shield', amt:7, allies:true }; break; }
+        let m = null; if (e.x !== P.x && e.y !== P.y) { for (const [x, y] of [[e.x, P.y], [P.x, e.y]]) if (Math.abs(x - e.x) + Math.abs(y - e.y) <= 2 && freeCell(C, x, y)) { m = [x, y]; break; } if (!m) m = approach(C, e, 1); }
+        const p = at(m); I = { move:m, kind:'area', cells:(p.y === P.y ? rowCells(p.y, p) : colCells(p.x, p)), dmg }; break;
+      }
+      case 'spawn': if (e.t % 2 === 0) I = { kind:'spawn', what:'copia', n:2 }; else { const m = approach(C, e, 1), p = at(m); I = { move:m, kind:'area', cells:cross(p.x, p.y), dmg }; } break;
+      case 'elite1': if (e.t % 2 === 0) I = { kind:'lock', dmg:6 + e.str, hits:2 }; else { const m = approach(C, e, 1), p = at(m); I = { move:m, kind:'area', cells:cross(p.x, p.y, 2), dmg }; } break;
+      case 'elite2': {
+        if (e.t % 3 === 1) { I = { kind:'shield', amt:12, then:{ kind:'lock', dmg:5 + e.str, hits:1 } }; break; }
+        let m = null; const opts = []; for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) if (Math.abs(x - P.x) + Math.abs(y - P.y) === 2 && freeCell(C, x, y)) opts.push([x, y]);
+        if (opts.length) m = pick(r, opts);
+        I = { move:m, teleport:true, kind:'area', cells:square(P.x, P.y).concat([[P.x, P.y]]), dmg }; break;
+      }
+      case 'boss1': { const s = e.t % 4;
+        if (s === 0) I = { kind:'area', cells:rowCells(P.y, e).concat(colCells(P.x, e)).filter((c, i, a) => a.findIndex(d => d[0] === c[0] && d[1] === c[1]) === i), dmg };
+        else if (s === 1) I = { kind:'shield', amt:15, then:{ kind:'lock', dmg:5 + e.str, hits:1 } };
+        else if (s === 2) I = { kind:'spawn', what:'copia', n:2 };
+        else { const m = approach(C, e, 1), p = at(m); I = { move:m, kind:'area', cells:square(p.x, p.y), dmg:dmg + 3 }; } break; }
+      case 'boss2': { const s = e.t % 5;
+        if (s === 0) I = { kind:'lock', dmg:5 + e.str, hits:2 };
+        else if (s === 1) I = { kind:'area', cells:rowCells(P.y, e), dmg };
+        else if (s === 2) I = { kind:'spawn', what:'escaner', n:1 };
+        else if (s === 3) I = { kind:'area', cells:square(P.x, P.y).concat([[P.x, P.y]]), dmg:dmg + 2 };
+        else I = { kind:'shield', amt:15 }; break; }
+      case 'boss3': { const s = e.t % 4, rage = e.hp <= e.maxHp / 2;
+        if (rage && !e.raged) { e.raged = true; I = { kind:'buff', str:3, then:{ kind:'lock', dmg:6 + e.str, hits:1 } }; break; }
+        if (s === 0) I = { kind:'area', cells:rowCells(P.y, e).concat(colCells(P.x, e)).filter((c, i, a) => a.findIndex(d => d[0] === c[0] && d[1] === c[1]) === i), dmg };
+        else if (s === 1) I = { kind:'lock', dmg:6 + e.str, hits:2 };
+        else if (s === 2) I = { kind:'spawn', what:'copia', n:2, then:{ kind:'shield', amt:12 } };
+        else I = { kind:'area', cells:square(P.x, P.y).concat([[P.x, P.y]]), dmg:dmg + 2 }; break; }
+    }
+    if (I.cells) I.cells = I.cells.filter(([x, y]) => !C.walls.has(key(x, y)));
+    e.intent = I;
+  }
+
+  // ---------- Acciones del jugador ----------
+  function canPlay(C, c) { return c.cost >= 0 && C.P.energy >= c.cost && c.type !== 'curse'; }
+  // Objetivos válidos para una carta
+  function targets(C, c) {
+    const P = C.P, t = c.target, out = [];
+    if (t.t === 'self') return [{ self:true }];
+    if (t.t === 'cell') { for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) if (freeCell(C, x, y) && Math.abs(x - P.x) + Math.abs(y - P.y) <= t.r) out.push({ x, y }); return out; }
+    if (t.t !== 'enemy') return out;
+    for (const e of C.E) {
+      const d = man(e, P);
+      if (t.mode === 'adj' && d === 1) out.push({ e:e.id, x:e.x, y:e.y });
+      if (t.mode === 'range' && d <= t.r) out.push({ e:e.id, x:e.x, y:e.y });
+      if (t.mode === 'line' && d <= t.r && (e.x === P.x || e.y === P.y) && clearLine(C, P, e)) out.push({ e:e.id, x:e.x, y:e.y });
+    }
+    return out;
+  }
+  function clearLine(C, a, b) {
+    const dx = Math.sign(b.x - a.x), dy = Math.sign(b.y - a.y); let x = a.x + dx, y = a.y + dy;
+    while (x !== b.x || y !== b.y) { if (C.walls.has(key(x, y)) || unitAt(C, x, y)) return false; x += dx; y += dy; }
+    return true;
+  }
+  function push(C, run, e, n, dir) {
+    for (let i = 0; i < n; i++) {
+      const nx = e.x + dir[0], ny = e.y + dir[1];
+      if (!inB(nx, ny) || C.walls.has(key(nx, ny)) || unitAt(C, nx, ny)) {
+        hitEnemy(C, run, e, 4, true); const o = inB(nx, ny) && unitAt(C, nx, ny); if (o && o !== C.P) hitEnemy(C, run, o, 4, true);
+        C.fx.push({ k:'bump', x:e.x, y:e.y }); return;
+      }
+      C.fx.push({ k:'slide', id:e.id, from:[e.x, e.y], to:[nx, ny] }); e.x = nx; e.y = ny;
+    }
+  }
+  function hitEnemy(C, run, e, base, raw) {
+    if (!C.E.includes(e)) return 0;
+    let d = raw ? base : base + C.P.str;
+    if (!raw && !C.firstAtkDone && !C.firstAtkBonusUsed && run.relics.includes('compilador')) { d += 4; C.firstAtkBonusUsed = true; }
+    const abs = Math.min(e.shield, d); e.shield -= abs; const real = d - abs; e.hp -= real;
+    C.fx.push({ k:'dmg', id:e.id, x:e.x, y:e.y, n:d, blocked:abs });
+    if (!raw && C.P.powers.venom && real > 0) e.virus += C.P.powers.venom;
+    if (e.hp <= 0) { C.E = C.E.filter(x => x !== e); C.fx.push({ k:'die', id:e.id, x:e.x, y:e.y }); }
+    return real;
+  }
+  function damagePlayer(C, run, n, src) {
+    if (n <= 0) return;
+    const P = C.P, abs = Math.min(P.shield, n); P.shield -= abs; const real = n - abs; run.hp -= real;
+    C.fx.push({ k:'pdmg', x:P.x, y:P.y, n, blocked:abs });
+    if (src && P.thorns && C.E.includes(src)) hitEnemy(C, run, src, P.thorns, true);
+  }
+  function playCard(C, run, hi, tgt) {
+    const inst = C.hand[hi], c = card(inst), P = C.P;
+    if (!canPlay(C, c)) return false;
+    P.energy -= c.cost; C.hand.splice(hi, 1);
+    const target = tgt && tgt.e ? C.E.find(e => e.id === tgt.e) : null;
+    for (const f of c.fx) {
+      if (f.dmg != null) {
+        if (!target) continue;
+        if (f.aoe) {
+          const cx = target.x, cy = target.y, victims = [target, ...C.E.filter(e => e !== target && Math.abs(e.x - cx) <= 1 && Math.abs(e.y - cy) <= 1)];
+          for (const v of victims) hitEnemy(C, run, v, f.dmg);
+          if (Math.abs(P.x - cx) <= 1 && Math.abs(P.y - cy) <= 1) damagePlayer(C, run, Math.floor(f.dmg / 2));
+          C.fx.push({ k:'blast', x:cx, y:cy });
+        } else if (f.pierce) {
+          const dx = Math.sign(target.x - P.x), dy = Math.sign(target.y - P.y); let x = P.x + dx, y = P.y + dy, n = 0;
+          C.fx.push({ k:'beam', from:[P.x, P.y], dir:[dx, dy] });
+          while (inB(x, y) && !C.walls.has(key(x, y)) && n < 6) { const u = C.E.find(e => e.x === x && e.y === y); if (u) hitEnemy(C, run, u, f.dmg); x += dx; y += dy; n++; }
+        } else if (f.chain) {
+          const hit = new Set(); let cur = target;
+          for (let j = 0; j <= f.chain && cur; j++) { hit.add(cur.id); const cx = cur.x, cy = cur.y; C.fx.push({ k:'zap', x:cx, y:cy }); hitEnemy(C, run, cur, f.dmg); cur = C.E.find(e => !hit.has(e.id) && Math.abs(e.x - cx) + Math.abs(e.y - cy) === 1); }
+        } else {
+          C.fx.push({ k:'shot', from:[P.x, P.y], to:[target.x, target.y] });
+          for (let j = 0; j < (f.times || 1); j++) hitEnemy(C, run, target, f.dmg);
+        }
+      }
+      if (f.push && target && C.E.includes(target)) { const dx = target.x - P.x, dy = target.y - P.y; const dir = Math.abs(dx) >= Math.abs(dy) ? [Math.sign(dx), 0] : [0, Math.sign(dy)]; push(C, run, target, f.push, dir); }
+      if (f.pull && target && C.E.includes(target)) { for (let j = 0; j < 6 && man(target, P) > 1; j++) { const ddx = P.x - target.x, ddy = P.y - target.y; const st = Math.abs(ddx) >= Math.abs(ddy) ? [Math.sign(ddx), 0] : [0, Math.sign(ddy)]; const nx = target.x + st[0], ny = target.y + st[1]; if (!freeCell(C, nx, ny)) break; C.fx.push({ k:'slide', id:target.id, from:[target.x, target.y], to:[nx, ny] }); target.x = nx; target.y = ny; } }
+      if (f.virus && target && C.E.includes(target)) target.virus += f.virus;
+      if (f.slow && target) target.slow = 1;
+      if (f.stun && target) { target.stun = 1; }
+      if (f.shield) P.shield += f.shield;
+      if (f.thorns) P.thorns += f.thorns;
+      if (f.heal) run.hp = Math.min(run.maxHp, run.hp + f.heal);
+      if (f.draw) drawCards(C, run, f.draw);
+      if (f.energy) P.energy += f.energy;
+      if (f.hpLoss) run.hp -= f.hpLoss;
+      if (f.moves) P.moves += f.moves;
+      if (f.teleport && tgt && tgt.x != null) { C.fx.push({ k:'tp', from:[P.x, P.y], to:[tgt.x, tgt.y] }); P.x = tgt.x; P.y = tgt.y; }
+      if (f.decoy && tgt && tgt.x != null) C.decoy = { x:tgt.x, y:tgt.y };
+      if (f.power) P.powers[f.power] = (P.powers[f.power] || 0) + f.n;
+      if (f.power === 'str') P.str += f.n;
+    }
+    if (c.type === 'atk') C.firstAtkDone = true;
+    if (c.exhaust || c.type === 'pow') C.exhaust.push(inst); else C.discard.push(inst);
+    // si murió un enemigo, su intención desaparece con él
+    checkEnd(C, run);
+    return true;
+  }
+  function move(C, run, x, y) {
+    const { dist, prev } = bfs(C, C.P, C.P.moves), k = key(x, y);
+    if (!dist.has(k) || dist.get(k) === 0) return false;
+    const path = []; let q = k; while (q != null && q !== key(C.P.x, C.P.y)) { path.unshift([q % W, (q / W) | 0]); q = prev.get(q); }
+    C.fx.push({ k:'pmove', path:[[C.P.x, C.P.y], ...path] });
+    C.P.moves -= dist.get(k); C.P.x = x; C.P.y = y; return true;
+  }
+
+  // ---------- Scripts ----------
+  function useScript(C, run, i, tgt) {
+    const id = run.scripts[i]; if (!id) return false; const S = SCRIPTS[id];
+    if (S.target === 'cell' && !(tgt && freeCell(C, tgt.x, tgt.y))) return false;
+    run.scripts.splice(i, 1);
+    if (id === 'parche') run.hp = Math.min(run.maxHp, run.hp + 10);
+    if (id === 'turbo') C.P.energy += 2;
+    if (id === 'escudo') C.P.shield += 12;
+    if (id === 'bomba') { C.fx.push({ k:'nova' }); for (const e of [...C.E]) hitEnemy(C, run, e, 8, true); }
+    if (id === 'salto') { C.fx.push({ k:'tp', from:[C.P.x, C.P.y], to:[tgt.x, tgt.y] }); C.P.x = tgt.x; C.P.y = tgt.y; }
+    if (id === 'lag') { C.lag = true; C.fx.push({ k:'lag' }); }
+    checkEnd(C, run); return true;
+  }
+  function scriptTargets(C, id) { if (SCRIPTS[id].target !== 'cell') return [{ self:true }]; const o = []; for (let x = 0; x < W; x++) for (let y = 0; y < H; y++) if (freeCell(C, x, y)) o.push({ x, y }); return o; }
+
+  // ---------- Turno enemigo ----------
+  function execIntent(C, run, e, I) {
+    const mult = (e.slow || C.lag) ? .5 : 1;
+    if (I.kind === 'area') {
+      C.fx.push({ k:'area', id:e.id, cells:I.cells });
+      const dmg = Math.floor(I.dmg * mult);
+      for (const [x, y] of I.cells) {
+        if (C.P.x === x && C.P.y === y) damagePlayer(C, run, dmg, e);
+        if (C.decoy && C.decoy.x === x && C.decoy.y === y) C.decoy = null;
+        const o = C.E.find(u => u !== e && u.x === x && u.y === y); if (o) hitEnemy(C, run, o, dmg, true);
+      }
+    } else if (I.kind === 'lock') {
+      for (let h = 0; h < I.hits; h++) {
+        if (C.decoy) { C.fx.push({ k:'lock', id:e.id, to:[C.decoy.x, C.decoy.y] }); C.decoy = null; continue; }
+        C.fx.push({ k:'lock', id:e.id, to:[C.P.x, C.P.y] }); damagePlayer(C, run, Math.floor(I.dmg * mult), e);
+      }
+    } else if (I.kind === 'shield') {
+      const who = I.allies ? C.E : [e]; for (const u of who) u.shield += I.amt; C.fx.push({ k:'shield', id:e.id });
+    } else if (I.kind === 'buff') { e.str += I.str; C.fx.push({ k:'buff', id:e.id }); }
+    else if (I.kind === 'spawn') { for (let i = 0; i < I.n; i++) { const n = addEnemy(C, I.what, run.rng, false, e); if (n) { n.intent = { kind:'idle' }; C.fx.push({ k:'spawn', id:n.id }); } } }
+    if (I.then) execIntent(C, run, e, I.then);
+  }
+  function endTurn(C, run) {
+    C.discard.push(...C.hand); C.hand = [];
+    for (const e of [...C.E]) {
+      if (!C.E.includes(e)) continue;
+      e.shield = 0;
+      if (e.virus > 0) { hitEnemy(C, run, e, e.virus, true); e.virus--; if (!C.E.includes(e)) continue; }
+      if (e.stun) { e.stun = 0; C.fx.push({ k:'stunned', id:e.id }); continue; }
+      const I = e.intent || { kind:'idle' };
+      if (I.move) {
+        if (I.teleport) { if (freeCell(C, I.move[0], I.move[1])) { C.fx.push({ k:'etp', id:e.id, from:[e.x, e.y], to:I.move }); e.x = I.move[0]; e.y = I.move[1]; } }
+        else {
+          const { dist, prev } = bfs(C, e, 3); let k = key(I.move[0], I.move[1]);
+          if (dist.has(k)) { const from = [e.x, e.y]; e.x = I.move[0]; e.y = I.move[1]; C.fx.push({ k:'emove', id:e.id, from, to:I.move }); }
+        }
+      }
+      execIntent(C, run, e, I);
+      e.slow = 0;
+      if (run.hp <= 0) break;
+    }
+    // Calor: todo lo que esté en una casilla sobrecalentada recibe 4
+    if (run.hp > 0) {
+      if (C.tiles.get(key(C.P.x, C.P.y)) === 'hot') { C.fx.push({ k:'heat', x:C.P.x, y:C.P.y }); const s0 = C.P.shield; C.P.shield = 0; damagePlayer(C, run, 4); C.P.shield = s0; }
+      for (const e of [...C.E]) if (C.tiles.get(key(e.x, e.y)) === 'hot') { C.fx.push({ k:'heat', x:e.x, y:e.y }); hitEnemy(C, run, e, 4, true); }
+    }
+    checkEnd(C, run);
+    if (!C.over) startTurn(C, run);
+  }
+  function checkEnd(C, run) {
+    if (run.hp <= 0) { C.over = true; C.result = 'lost'; }
+    else if (!C.E.length) { C.over = true; C.result = 'won'; }
+  }
+
+  // ---------- Partida (run) ----------
+  let UID = 1;
+  // El generador aleatorio guarda su estado en la partida (para poder guardarla y seguir)
+  function attach(run) {
+    run.rng = () => { let a = run.rs | 0; a = (a + 0x6d2b79f5) | 0; run.rs = a; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+    UID = Math.max(UID, ...run.deck.map(c => c.uid + 1), 1);
+    return run;
+  }
+  const saveRun = run => JSON.stringify(Object.assign({}, run, { rng:undefined, combat:undefined }));
+  const loadRun = txt => attach(JSON.parse(txt));
+  function newRun(seed) {
+    seed = seed || Math.floor(Math.random() * 1e9);
+    const deck = [];
+    const add = (id, n) => { for (let i = 0; i < n; i++) deck.push({ uid:UID++, id, up:false }); };
+    add('ping', 4); add('firewall', 4); add('salto', 1); add('empuje', 1);
+    const run = { seed, rs:seed, hp:42, maxHp:42, bits:40, deck, relics:[], scripts:['parche'], zone:1, layer:-1, node:null, map:null, over:false, won:false, screen:'map', floors:0, kills:0, stats:{ combats:0, dmgTaken:0 } };
+    attach(run);
+    run.map = makeMap(run, 1);
+    return run;
+  }
+  function makeMap(run, zone) {
+    const r = run.rng, layers = [];
+    const typesFor = [() => 'combat', () => pick(r, ['combat', 'combat', 'event']), () => pick(r, ['elite', 'combat', 'shop', 'event']), () => pick(r, ['rest', 'rest', 'shop', 'event'])];
+    for (let L = 0; L < 4; L++) {
+      const n = 2 + Math.floor(r() * 2), cols = shuffle(r, [0, 1, 2]).slice(0, n).sort();
+      const nodes = cols.map(c => ({ id:`${zone}-${L}-${c}`, L, col:c, type:typesFor[L](), next:[] }));
+      if (L === 2 && !nodes.some(x => x.type === 'elite')) nodes[Math.floor(r() * nodes.length)].type = 'elite';
+      if (L === 3 && !nodes.some(x => x.type === 'rest')) nodes[0].type = 'rest';
+      layers.push(nodes);
+    }
+    layers.push([{ id:`${zone}-4-1`, L:4, col:1, type:'boss', next:[] }]);
+    for (let L = 0; L < 4; L++) {
+      const a = layers[L], b = layers[L + 1];
+      for (const n of a) { const near = b.filter(m => Math.abs(m.col - n.col) <= 1); (near.length ? near : [b.reduce((p, m) => Math.abs(m.col - n.col) < Math.abs(p.col - n.col) ? m : p)]).forEach(m => n.next.push(m.id)); }
+      for (const m of b) if (!a.some(n => n.next.includes(m.id))) { const n = a.reduce((p, q) => Math.abs(q.col - m.col) < Math.abs(p.col - m.col) ? q : p); n.next.push(m.id); }
+    }
+    return { zone, layers };
+  }
+  const nodeById = (run, id) => run.map.layers.flat().find(n => n.id === id);
+  function options(run) {
+    if (run.node == null) return run.map.layers[0];
+    return nodeById(run, run.node).next.map(id => nodeById(run, id));
+  }
+  function enter(run, id) {
+    const n = nodeById(run, id); run.node = id; run.layer = n.L; run.floors++;
+    const enc = ENCOUNTERS[run.zone], r = run.rng;
+    if (n.type === 'combat' || n.type === 'elite' || n.type === 'boss') {
+      const types = n.type === 'combat' ? pick(r, enc.normal) : n.type === 'elite' ? pick(r, enc.elite) : enc.boss;
+      run.combat = makeCombat(run, types, n.type); run.screen = 'combat'; run.stats.combats++;
+      startTurn(run.combat, run);
+    } else if (n.type === 'shop') { run.shop = makeShop(run); run.screen = 'shop'; }
+    else if (n.type === 'rest') run.screen = 'rest';
+    else if (n.type === 'event') { run.event = pick(r, Object.keys(EVENTS)); run.screen = 'event'; }
+    return n;
+  }
+  const pool = rar => Object.keys(CARDS).filter(k => CARDS[k].rarity === rar);
+  function cardChoices(run, kind) {
+    const r = run.rng, out = new Set();
+    while (out.size < 3) { const rare = r() < (kind === 'elite' || kind === 'boss' ? .5 : .22); out.add(pick(r, pool(rare ? 'rare' : 'common'))); }
+    return [...out];
+  }
+  function finishCombat(run) {
+    const C = run.combat;
+    if (C.result === 'lost') { run.over = true; run.screen = 'over'; return; }
+    run.kills += 0;
+    const n = nodeById(run, run.node), r = run.rng;
+    if (run.relics.includes('parche')) run.hp = Math.min(run.maxHp, run.hp + 4);
+    const reward = { bits:n.type === 'boss' ? 70 : n.type === 'elite' ? 40 : 15 + Math.floor(r() * 11), cards:cardChoices(run, n.type), relic:null };
+    if (n.type === 'elite' || n.type === 'boss') { const free = Object.keys(RELICS).filter(k => !run.relics.includes(k)); if (free.length) reward.relic = pick(r, free); }
+    run.bits += reward.bits;
+    if ((n.type !== 'combat' || r() < .25) && run.scripts.length < 3) { reward.script = pick(r, Object.keys(SCRIPTS)); run.scripts.push(reward.script); }
+    run.reward = reward; run.screen = 'reward'; run.combat = null;
+    if (reward.relic) gainRelic(run, reward.relic);
+    if (n.type === 'boss') {
+      if (run.zone === 3) { run.won = true; run.over = true; run.screen = 'over'; return; }
+      run.nextZone = true;
+    }
+  }
+  function gainRelic(run, id) {
+    if (run.relics.includes(id)) return; run.relics.push(id);
+    if (id === 'redundancia') { run.maxHp += 12; run.hp += 12; }
+    if (id === 'cuantico') run.deck.push({ uid:UID++, id:'malware', up:false });
+  }
+  function takeCard(run, id) { if (id) run.deck.push({ uid:UID++, id, up:false }); afterNode(run); }
+  function afterNode(run) {
+    run.reward = null; run.shop = null; run.event = null;
+    if (run.nextZone) { run.nextZone = false; run.zone++; run.node = null; run.layer = -1; run.map = makeMap(run, run.zone); run.hp = Math.min(run.maxHp, run.hp + Math.ceil((run.maxHp - run.hp) * .5)); }
+    run.screen = 'map';
+  }
+  function makeShop(run) {
+    const r = run.rng, cards = [];
+    const com = shuffle(r, pool('common')).slice(0, 3), rar = shuffle(r, pool('rare')).slice(0, 2);
+    for (const id of com) cards.push({ id, price:45 + Math.floor(r() * 15) });
+    for (const id of rar) cards.push({ id, price:80 + Math.floor(r() * 20) });
+    const free = Object.keys(RELICS).filter(k => !run.relics.includes(k));
+    const scripts = shuffle(r, Object.keys(SCRIPTS)).slice(0, 2).map(id => ({ id, price:SCRIPTS[id].price }));
+    return { cards, scripts, relic:free.length ? { id:pick(r, free), price:140 } : null, remove:75, heal:{ amt:15, price:40 }, removed:false };
+  }
+  function buy(run, what, arg) {
+    const S = run.shop;
+    if (what === 'card') { const it = S.cards[arg]; if (!it || it.sold || run.bits < it.price) return false; run.bits -= it.price; it.sold = true; run.deck.push({ uid:UID++, id:it.id, up:false }); return true; }
+    if (what === 'script') { const it = S.scripts[arg]; if (!it || it.sold || run.bits < it.price || run.scripts.length >= 3) return false; run.bits -= it.price; it.sold = true; run.scripts.push(it.id); return true; }
+    if (what === 'relic') { if (!S.relic || S.relic.sold || run.bits < S.relic.price) return false; run.bits -= S.relic.price; S.relic.sold = true; gainRelic(run, S.relic.id); return true; }
+    if (what === 'remove') { if (S.removed || run.bits < S.remove) return false; const i = run.deck.findIndex(c => c.uid === arg); if (i < 0) return false; run.bits -= S.remove; run.deck.splice(i, 1); S.removed = true; return true; }
+    if (what === 'heal') { if (S.healed || run.bits < S.heal.price || run.hp >= run.maxHp) return false; run.bits -= S.heal.price; run.hp = Math.min(run.maxHp, run.hp + S.heal.amt); S.healed = true; return true; }
+    return false;
+  }
+  function rest(run, what, uid) {
+    if (what === 'heal') run.hp = Math.min(run.maxHp, run.hp + Math.ceil(run.maxHp * .3));
+    if (what === 'upgrade') { const c = run.deck.find(c => c.uid === uid && !c.up && CARDS[c.id].up); if (!c) return false; c.up = true; }
+    afterNode(run); return true;
+  }
+  function eventChoose(run, i, arg) {
+    const ev = EVENTS[run.event], fx = ev.opts[i].fx, r = run.rng; const res = {};
+    if (fx.hpLoss) run.hp = Math.max(1, run.hp - fx.hpLoss);
+    if (fx.bits) run.bits += fx.bits;
+    if (fx.heal) run.hp = Math.min(run.maxHp, run.hp + fx.heal);
+    if (fx.maxHp) { run.maxHp += fx.maxHp; run.hp += fx.maxHp; }
+    if (fx.cardRare) { const id = pick(r, pool('rare')); run.deck.push({ uid:UID++, id, up:false }); res.card = id; }
+    if (fx.relic) { const free = Object.keys(RELICS).filter(k => !run.relics.includes(k)); if (free.length) { const id = pick(r, free); gainRelic(run, id); res.relic = id; } }
+    if (fx.curse) run.deck.push({ uid:UID++, id:'malware', up:false });
+    if (fx.upgradeRandom) { const c = shuffle(r, run.deck.filter(c => !c.up && CARDS[c.id].up)).slice(0, fx.upgradeRandom); c.forEach(x => x.up = true); res.upgraded = c.map(x => x.id); }
+    if (fx.removeCard && arg != null) { const k = run.deck.findIndex(c => c.uid === arg); if (k >= 0) run.deck.splice(k, 1); }
+    return res;
+  }
+
+  const API = { useScript, scriptTargets, saveRun, loadRun, attach, BAL, W, H, rng, card, cardText, makeCombat, startTurn, endTurn, playCard, move, targets, reachable, canPlay, freeCell, newRun, options, enter, finishCombat, takeCard, afterNode, buy, rest, eventChoose, nodeById, gainRelic, key, D };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API; else root.Fuga = API;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+'use strict';
+const F = window.Fuga, D = F.D, $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, window.__fast ? 0 : ms * (window.__speed || 1)));
+const store = { get(k, d){ try{ const v = localStorage.getItem('fuga.' + k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } }, set(k, v){ try{ localStorage.setItem('fuga.' + k, JSON.stringify(v)); }catch(e){} }, del(k){ try{ localStorage.removeItem('fuga.' + k); }catch(e){} } };
+const TYPE = { atk:{ c:'#ff5d8f', l:'Ataque' }, def:{ c:'#5aa7ff', l:'Defensa' }, mov:{ c:'#39e5ff', l:'Movimiento' }, util:{ c:'#4dffa1', l:'Utilidad' }, pow:{ c:'#b48cff', l:'Poder' }, curse:{ c:'#7d8bab', l:'Basura' } };
+
+/* ---------- Sonido ---------- */
+const Snd = (() => { let ctx = null, m = null, on = store.get('sound', true);
+  const ens = () => { if (!on) return null; try{ if (!ctx){ ctx = new (window.AudioContext || window.webkitAudioContext)(); m = ctx.createGain(); m.gain.value = .5; m.connect(ctx.destination); } if (ctx.state === 'suspended') ctx.resume(); }catch(e){ return null; } return ctx; };
+  const t = ({f=440, f2, type='square', d=.12, g=.08, w=0, lp=2400}) => { const c = ens(); if (!c) return; const s = c.currentTime + w, o = c.createOscillator(), a = c.createGain(), fl = c.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = lp; o.type = type; o.frequency.setValueAtTime(f, s); if (f2) o.frequency.exponentialRampToValueAtTime(f2, s + d); a.gain.setValueAtTime(0, s); a.gain.linearRampToValueAtTime(g, s + .005); a.gain.exponentialRampToValueAtTime(.0001, s + d); o.connect(fl); fl.connect(a); a.connect(m); o.start(s); o.stop(s + d + .05); };
+  const S = { click:() => t({f:1200, d:.04, g:.05}), sel:() => t({f:660, f2:990, d:.07, g:.06, type:'triangle'}), move:() => t({f:300, f2:520, d:.12, g:.05, type:'sine'}),
+    shot:() => t({f:1800, f2:300, d:.16, g:.06, type:'sawtooth'}), hit:() => t({f:180, f2:90, d:.14, g:.12}), hurt:() => { t({f:140, f2:60, d:.25, g:.14, type:'sawtooth', lp:900}); },
+    shield:() => t({f:520, f2:780, d:.18, g:.06, type:'triangle'}), die:() => { t({f:900, f2:60, d:.4, g:.08, type:'sawtooth'}); }, alarm:() => t({f:440, f2:330, d:.18, g:.05}),
+    win:() => [523, 659, 784, 1046].forEach((f, i) => t({f, d:.3, g:.07, type:'triangle', w:i * .09})), lose:() => [330, 262, 196].forEach((f, i) => t({f, d:.4, g:.08, type:'sawtooth', w:i * .15, lp:900})), coin:() => { t({f:988, d:.06, g:.05}); t({f:1319, d:.12, g:.05, w:.06}); } };
+  return { p(n){ if (on && S[n]) try{ S[n](); }catch(e){} }, get on(){ return on; }, toggle(){ on = !on; store.set('sound', on); ens(); } }; })();
+document.addEventListener('pointerdown', () => { if (Snd.on) Snd.p(''); }, {once:true});
+
+/* ---------- Iconos (SVG) ---------- */
+const ICON = {
+  escaner:'<circle r="2.6" fill="none" stroke="currentColor" stroke-width=".7"/><circle r="1.1" fill="currentColor"/><path d="M-4 0h1.2M2.8 0h1.2M0-4v1.2M0 2.8v1.2" stroke="currentColor" stroke-width=".6"/>',
+  pulso:'<rect x="-2.8" y="-2.8" width="5.6" height="5.6" rx="1" fill="none" stroke="currentColor" stroke-width=".7"/><circle r="1.5" fill="none" stroke="currentColor" stroke-width=".7"/><circle r=".55" fill="currentColor"/><path d="M0-2.8v-1.4" stroke="currentColor" stroke-width=".8"/>',
+  rastreador:'<path d="M0 -3.4 3 2.3 -3 2.3Z" fill="none" stroke="currentColor" stroke-width=".7"/><circle r=".9" fill="currentColor"/>',
+  cazador:'<path d="M-2.8 -2.8 0 0 -2.8 2.8M.2 -2.8 3 0 .2 2.8" fill="none" stroke="currentColor" stroke-width=".9" stroke-linejoin="round"/>',
+  muro:'<path d="M-3.2-2.4h6.4v4.8h-6.4zM-3.2 0h6.4M-1 -2.4v2.4M1.3 0v2.4" fill="none" stroke="currentColor" stroke-width=".6"/>',
+  centinela:'<path d="M0 -3.6 2 0 0 3.6 -2 0Z" fill="none" stroke="currentColor" stroke-width=".7"/><circle r=".8" fill="currentColor"/>',
+  replicador:'<circle cx="-1.5" cy="-.9" r="1.3" fill="none" stroke="currentColor" stroke-width=".6"/><circle cx="1.5" cy="-.9" r="1.3" fill="none" stroke="currentColor" stroke-width=".6"/><circle cy="1.6" r="1.3" fill="none" stroke="currentColor" stroke-width=".6"/>',
+  copia:'<circle r="1.8" fill="none" stroke="currentColor" stroke-width=".7"/><circle r=".55" fill="currentColor"/>',
+  kernel:'<circle r="1.5" fill="currentColor"/><path d="M0-3v1M0 2v1M-3 0h1M2 0h1" stroke="currentColor" stroke-width=".7"/>',
+  proxy:'<rect x="-3" y="-3" width="4" height="4" fill="none" stroke="currentColor" stroke-width=".6"/><rect x="-1" y="-1" width="4" height="4" fill="none" stroke="currentColor" stroke-width=".6"/>',
+  guardian:'<path d="M0-3.4v6.8M-3.4 0h6.8" stroke="currentColor" stroke-width=".55"/><circle r="1.4" fill="currentColor"/><circle r="2.8" fill="none" stroke="currentColor" stroke-width=".5"/>',
+  hydra:'<circle cx="-1.8" cy="-1.3" r="1.2" fill="currentColor"/><circle cx="1.8" cy="-1.3" r="1.2" fill="currentColor"/><circle cy="1.8" r="1.2" fill="currentColor"/>',
+  cerbero:'<path d="M-3.6 2.6-2.3-2.6-.9 1 0-3.6.9 1 2.3-2.6 3.6 2.6Z" fill="none" stroke="currentColor" stroke-width=".7" stroke-linejoin="round"/><circle cy="1.4" r=".8" fill="currentColor"/>',
+};
+const NODESVG = {
+  combat:'<path d="M-6-6 6 6M6-6-6 6M-6 3l3 3M6 3l-3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  elite:'<path d="M0-7 6-3.5v7L0 7-6 3.5v-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M-2.4-2.4 2.4 2.4M2.4-2.4-2.4 2.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  boss:'<path d="M-9 0Q0-8 9 0Q0 8-9 0Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle r="3" fill="currentColor"/>',
+  shop:'<path d="M0-7 7 0 0 7-7 0Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M0-3 3 0 0 3-3 0Z" fill="currentColor"/>',
+  rest:'<path d="M0-6v12M-6 0h12" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
+  event:'<path d="M-3.2-3a3.2 3.2 0 1 1 4.6 2.8C0 .6 0 1.4 0 2.4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cy="5.6" r="1.2" fill="currentColor"/>',
+};
+const NODEC = { combat:'#5aa7ff', elite:'#ff9f43', boss:'#ff3d8b', shop:'#ffd24d', rest:'#4dffa1', event:'#b48cff' };
+const NODEL = { combat:'Combate', elite:'Élite', boss:'Jefe', shop:'Tienda', rest:'Reparación', event:'Evento' };
+const CARDART = {
+  atk:'<path d="M2-9-5 1h5l-2 8 7-10H0z" fill="currentColor"/>',
+  def:'<path d="M0-9 8-5v5c0 5-4 8-8 9-4-1-8-4-8-9v-5z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M0-4 4-2v2.5c0 2.4-2 4-4 4.5-2-.5-4-2.1-4-4.5V-2z" fill="currentColor" opacity=".5"/>',
+  mov:'<path d="M-8 0h16M4-4l4 4-4 4M-4-4l-4 4 4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  util:'<rect x="-6" y="-6" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="-2.5" y="-2.5" width="5" height="5" fill="currentColor" opacity=".6"/><path d="M-6-3h-3M-6 3h-3M6-3h3M6 3h3M-3-6v-3M3-6v-3M-3 6v3M3 6v3" stroke="currentColor" stroke-width="1.2"/>',
+  pow:'<path d="M0-9 2.6-3 9-3 4 1 6 8 0 4-6 8-4 1-9-3-2.6-3Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle r="2" fill="currentColor"/>',
+  curse:'<path d="M-8-4h6v3h4v-3h6M-8 4h10v-2h6" stroke="currentColor" stroke-width="1.8" fill="none"/>',
+};
+const SCRIPTART = '<path d="M-4-6h8v12h-8z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M-2-3h4M-2 0h4M-2 3h2" stroke="currentColor" stroke-width="1.2"/>';
+
+/* ---------- Arte: enemigos animados ---------- */
+const ECOL = { escaner:'#ff6b9a', pulso:'#ff9f43', rastreador:'#ffd24d', cazador:'#ff4d6a', muro:'#ff7a3d', centinela:'#c08bff', replicador:'#ff5dd6', copia:'#ff9be6', kernel:'#ff9f43', proxy:'#c07bff', guardian:'#ff3d8b', hydra:'#ff3d8b', cerbero:'#ff2b55' };
+const rot = (dur, rev) => `<animateTransform attributeName="transform" type="rotate" from="${rev ? 360 : 0}" to="${rev ? 0 : 360}" dur="${dur}s" repeatCount="indefinite"/>`;
+const pulseA = (attr, vals, dur) => `<animate attributeName="${attr}" values="${vals}" dur="${dur}s" repeatCount="indefinite"/>`;
+const SPRITE = {
+  escaner:`<path d="M-4.2-.6-2.6-1.4M4.2-.6 2.6-1.4M-4.2 .6-2.6 1.4M4.2 .6 2.6 1.4" stroke="currentColor" stroke-width=".6" stroke-linecap="round"/>
+    <circle r="2.9" fill="#1b0a14" stroke="currentColor" stroke-width=".6"/><circle r="1.7" fill="#2a0e1e" stroke="currentColor" stroke-width=".35"/>
+    <circle r=".9" fill="currentColor">${pulseA('r', '.9;.6;.9', 1.6)}</circle>
+    <g>${rot(2.6)}<path d="M0 0 3.8-1.2A4 4 0 0 1 3.8 1.2Z" fill="currentColor" opacity=".18"/></g>`,
+  pulso:`<rect x="-3.4" y="-1.2" width="6.8" height="4.4" rx=".8" fill="#1d1008" stroke="currentColor" stroke-width=".55"/><path d="M-2.6 3.2h5.2" stroke="currentColor" stroke-width=".4" opacity=".6"/>
+    <g><animateTransform attributeName="transform" type="rotate" values="-25;25;-25" dur="3s" repeatCount="indefinite"/>
+    <rect x="-.7" y="-4.6" width="1.4" height="4" rx=".4" fill="#2a170a" stroke="currentColor" stroke-width=".45"/><circle cy="-4.6" r=".55" fill="currentColor">${pulseA('opacity', '1;.3;1', 1)}</circle></g>
+    <circle r="1.6" fill="#2a170a" stroke="currentColor" stroke-width=".5"/>`,
+  rastreador:`<circle cy="-.4" r="1" fill="none" stroke="currentColor" stroke-width=".3">${pulseA('r', '1;4.6', 1.6)}${pulseA('opacity', '.8;0', 1.6)}</circle>
+    <path d="M0-3.4 3.2 2.6H-3.2Z" fill="#1d1806" stroke="currentColor" stroke-width=".6" stroke-linejoin="round"/>
+    <path d="M0-3.4V-4.8" stroke="currentColor" stroke-width=".4"/><circle cy="-5" r=".45" fill="currentColor"/><circle cy=".6" r=".95" fill="currentColor"/>`,
+  cazador:`<path d="M-3.6 1.6-4.6 2.6M-3.6-1.6-4.6-2.6" stroke="currentColor" stroke-width=".4"/>
+    <path d="M-3.4-.9-5.6 0-3.4.9" fill="#ffb347">${pulseA('opacity', '1;.35;1', .25)}</path>
+    <path d="M4 0-2.8-3.4-1.4 0-2.8 3.4Z" fill="#1f070c" stroke="currentColor" stroke-width=".6" stroke-linejoin="round"/>
+    <path d="M1.6 0-1 -1.2v2.4Z" fill="currentColor"/>`,
+  muro:`<path d="M-2.6-3.1q.5-1.3 0-2.2M0-3.2q.6-1.5 0-2.6M2.6-3.1q.5-1.3 0-2.2" fill="none" stroke="#ffb347" stroke-width=".5" stroke-linecap="round">${pulseA('opacity', '1;.4;1', .7)}</path>
+    <rect x="-4" y="-3" width="8" height="6.2" rx=".6" fill="#1f0e08" stroke="currentColor" stroke-width=".6"/>
+    <path d="M-4 0h8M-4 1.6h8M-1.4-3v3M1.8 0v1.6M-2.4 1.6v1.6M.8 1.6v1.6M2.6-3v3" stroke="currentColor" stroke-width=".35" opacity=".8"/>`,
+  centinela:`<g>${rot(5)}<circle cx="3.6" r=".45" fill="currentColor"/><circle cx="-3.6" r=".45" fill="currentColor"/></g>
+    <path d="M0-4.6 2.3 0 0 4.6-2.3 0Z" fill="#170c24" stroke="currentColor" stroke-width=".6" stroke-linejoin="round"/>
+    <rect x="-.35" y="-2.4" width=".7" height="4.8" rx=".35" fill="currentColor">${pulseA('opacity', '1;.4;1', 1.4)}</rect>`,
+  replicador:`<circle cx="-1.5" cy="-1" r="1.6" fill="#22091f" stroke="currentColor" stroke-width=".5">${pulseA('r', '1.6;1.9;1.6', 1.2)}</circle>
+    <circle cx="1.6" cy="-1" r="1.6" fill="#22091f" stroke="currentColor" stroke-width=".5"><animate attributeName="r" values="1.6;1.9;1.6" dur="1.2s" begin=".4s" repeatCount="indefinite"/></circle>
+    <circle cy="1.6" r="1.6" fill="#22091f" stroke="currentColor" stroke-width=".5"><animate attributeName="r" values="1.6;1.9;1.6" dur="1.2s" begin=".8s" repeatCount="indefinite"/></circle>
+    <circle cx="-1.5" cy="-1" r=".45" fill="currentColor"/><circle cx="1.6" cy="-1" r=".45" fill="currentColor"/><circle cy="1.6" r=".45" fill="currentColor"/>`,
+  copia:`<circle r="2.4" fill="none" stroke="currentColor" stroke-width=".35" stroke-dasharray=".7 .5">${rot(3)}</circle><circle r="1.6" fill="#22091f" stroke="currentColor" stroke-width=".5"/><circle r=".6" fill="currentColor"/>`,
+  kernel:`<g>${rot(4)}<circle cx="0" cy="-4.4" r=".6" fill="currentColor"/><circle cx="3.8" cy="2.2" r=".6" fill="currentColor"/><circle cx="-3.8" cy="2.2" r=".6" fill="currentColor"/><circle r="4.4" fill="none" stroke="currentColor" stroke-width=".2" opacity=".5"/></g>
+    <path d="M0-3.2 2.8-1.6v3.2L0 3.2-2.8 1.6v-3.2Z" fill="#20110a" stroke="currentColor" stroke-width=".6"/><circle r="1.3" fill="currentColor">${pulseA('r', '1.3;.9;1.3', 1.2)}</circle>`,
+  proxy:`<g><animateTransform attributeName="transform" type="translate" values="-.6 -.6;.6 .6;-.6 -.6" dur="1.8s" repeatCount="indefinite"/><rect x="-3.4" y="-3.4" width="4.6" height="4.6" rx=".5" fill="#170c24" stroke="currentColor" stroke-width=".55"/></g>
+    <g><animateTransform attributeName="transform" type="translate" values=".6 .6;-.6 -.6;.6 .6" dur="1.8s" repeatCount="indefinite"/><rect x="-1.2" y="-1.2" width="4.6" height="4.6" rx=".5" fill="none" stroke="currentColor" stroke-width=".55"/></g><circle r=".8" fill="currentColor"/>`,
+  guardian:`<g>${rot(8)}${[0, 90, 180, 270].map(a => `<path transform="rotate(${a})" d="M-1.6-4.9h3.2l-.5 1.4h-2.2Z" fill="currentColor"/>`).join('')}</g>
+    <circle r="3.4" fill="#1d0818" stroke="currentColor" stroke-width=".6"/><path d="M0-2.4v4.8M-2.4 0h4.8" stroke="currentColor" stroke-width=".4" opacity=".7"/><circle r="1.3" fill="currentColor">${pulseA('opacity', '1;.5;1', 1)}</circle>`,
+  hydra:`<path d="M0 1.4-2.6-1.6M0 1.4 2.6-1.6M0 1.4V-2.8" stroke="currentColor" stroke-width=".55"/>
+    ${[[-2.8, -2.2, 0], [2.8, -2.2, .5], [0, -3.6, 1]].map(([x, y, d]) => `<g><animateTransform attributeName="transform" type="translate" values="0 0;0 -.5;0 0" dur="1.6s" begin="${d}s" repeatCount="indefinite"/><circle cx="${x}" cy="${y}" r="1.3" fill="#1d0818" stroke="currentColor" stroke-width=".5"/><circle cx="${x}" cy="${y}" r=".45" fill="currentColor"/></g>`).join('')}
+    <ellipse cy="2.4" rx="3" ry="1.8" fill="#1d0818" stroke="currentColor" stroke-width=".6"/>`,
+  cerbero:`<g>${rot(10, true)}${Array.from({length:12}, (_, i) => `<path transform="rotate(${i * 30})" d="M-.4-4.6 0-5.6.4-4.6Z" fill="currentColor"/>`).join('')}</g>
+    <circle r="4.1" fill="#22050c" stroke="currentColor" stroke-width=".6"/>
+    <path d="M-3 1.8-2.2-2.2-1 .6 0-3 1 .6 2.2-2.2 3 1.8Z" fill="#3a0a14" stroke="currentColor" stroke-width=".45" stroke-linejoin="round"/>
+    ${[-1.9, 0, 1.9].map(x => `<circle cx="${x}" cy="${x === 0 ? -1.2 : -.3}" r=".42" fill="#ffe0e6">${pulseA('opacity', '1;.3;1', 1.3)}</circle>`).join('')}`,
+};
+
+/* ---------- Arte: una ilustración por carta ---------- */
+const CG = {
+  ping:'<path d="M-6 6a12 12 0 0 1 12-12M-6 6a7 7 0 0 1 7-7M-6 6a2.5 2.5 0 0 1 2.5-2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="-6" cy="6" r="1.4" fill="currentColor"/>',
+  firewall:'<path d="M0-9 8-5.5v5C8 4.5 4.5 7.5 0 9-4.5 7.5-8 4.5-8-.5v-5Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M-5-2h10M-5 2h10M0-6v4M-2.5-2v4M2.5-2v4M0 2v4" stroke="currentColor" stroke-width="1"/>',
+  salto:'<path d="M-8 6Q0-12 8 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2 1.6"/><circle cx="-8" cy="6" r="1.6" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="8" cy="6" r="2" fill="currentColor"/>',
+  empuje:'<path d="M-8 0h9M-2-4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="-4" width="5" height="8" rx="1" fill="currentColor" opacity=".6"/><path d="M10-6l2-2M10 6l2 2" stroke="currentColor" stroke-width="1.2"/>',
+  rafaga:'<path d="M-6-8-9-1h3l-2 6 5-8h-3zM1-8-2-1h3l-2 6 5-8H1zM8-8 5-1h3l-2 6 5-8H8z" fill="currentColor"/>',
+  rayo:'<path d="M-10 0H8" stroke="currentColor" stroke-width="3" opacity=".35"/><path d="M-10 0H9M5-3l4 3-4 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="-1" r="1.2" fill="currentColor"/><circle cx="5" r="1.2" fill="currentColor"/>',
+  inyeccion:'<path d="M-7 7 4-4M2-6l4 4M6-8l2 2M-2 1l2 2M-5 4l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M-9 9-7 7" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="6" r="2.2" fill="currentColor" opacity=".6"/>',
+  paquete:'<path d="M-7-3 0-7l7 4v8l-7 4-7-4z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M-7-3 0 1l7-4M0 1v8" fill="none" stroke="currentColor" stroke-width="1"/><path d="M2-1 5 3" stroke="currentColor" stroke-width="1.6"/>',
+  gancho:'<path d="M-8-7H2a5 5 0 0 1 0 10h-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M-1 3-4 0M-1 3l-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+  cifrado:'<rect x="-6" y="-2" width="12" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M-3.5-2v-3a3.5 3.5 0 0 1 7 0v3" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cy="3" r="1.4" fill="currentColor"/>',
+  esquiva:'<path d="M-9 6-4-2l3 5 4-8 3 4 3-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/><path d="M6-7h3v3" fill="none" stroke="currentColor" stroke-width="1.4"/>',
+  bucle:'<path d="M-6 0a6 6 0 0 1 10-4.5M6 0a6 6 0 0 1-10 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4-8v4h-4M-4 8V4h4" fill="none" stroke="currentColor" stroke-width="1.5"/>',
+  desfase:'<path d="M-3-6 2 0-3 6-8 0Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="1.6 1.2"/><path d="M3-6 8 0 3 6-2 0Z" fill="currentColor" opacity=".55"/>',
+  escaneo:'<circle r="8" fill="none" stroke="currentColor" stroke-width="1"/><circle r="4" fill="none" stroke="currentColor" stroke-width=".8" opacity=".6"/><path d="M0 0 7-4A8 8 0 0 1 8 0Z" fill="currentColor" opacity=".6"/><circle cx="-3" cy="3" r="1.1" fill="currentColor"/>',
+  desborde:'<path d="M0-9 2-3 8-5 4 0l5 4-6 0-1 6-2-5-5 3 2-5-6-2 6-1-2-5 5 3z" fill="currentColor" opacity=".85"/><circle r="2" fill="#0b1224"/>',
+  bruta:'<rect x="-8" y="-7" width="10" height="6" rx="1" fill="currentColor"/><path d="M-3-1 4 8" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M5-6l3-2M5-2h4" stroke="currentColor" stroke-width="1.2"/>',
+  sobrecarga:'<circle r="8.5" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 1.4"/><path d="M2-7-4 1h4l-2 7 6-9H0z" fill="currentColor"/>',
+  cadena:'<rect x="-9" y="-3" width="8" height="6" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="-3" y="-3" width="8" height="6" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(20 1 0)"/><path d="M5 0l4 0M8-3l2 3-2 3" fill="none" stroke="currentColor" stroke-width="1.3"/>',
+  desactivar:'<path d="M-4.5-5.5a7 7 0 1 0 9 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M0-8v7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M-8 8 8-8" stroke="currentColor" stroke-width="1.2" opacity=".6"/>',
+  senuelo:'<circle cy="-4" r="3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="1.5 1"/><path d="M-5 8q0-7 5-7t5 7" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="1.5 1"/><circle cy="-4" r="1" fill="currentColor"/>',
+  respaldo:'<circle r="8" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M0-4.5v9M-4.5 0h9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  overclock:'<path d="M-8 4a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M0 4 5-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cy="4" r="1.6" fill="currentColor"/><path d="M5-6l2 1M7-2h2" stroke="currentColor" stroke-width="1"/>',
+  espejo:'<path d="M-6 8 6-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M-9-2-2-2-2-8" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M2 2h6v6" fill="none" stroke="currentColor" stroke-width="1.2"/>',
+  optimizar:'<path d="M-6 2 0-4l6 6M-6 8 0 2l6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M-6-4 0-10l6 6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".5"/>',
+  perimetro:'<circle r="8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="3 1.5"/><path d="M0-4 3.5-2.3v2.5C3.5 2.2 1.8 3.8 0 4.4-1.8 3.8-3.5 2.2-3.5.2v-2.5Z" fill="currentColor"/>',
+  mineria:'<path d="M-6-6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M-9-2Q-6-9 2-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M4 2l4-2 2 4-4 2z" fill="currentColor"/>',
+  latente:'<circle cy="-4" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="-3.6" cy="2.4" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="3.6" cy="2.4" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/><circle r="1.3" fill="currentColor"/>',
+  malware:'<path d="M-6-2a6 6 0 0 1 12 0v4h-3v3h-6v-3h-3z" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="-2.4" cy="-1" r="1.3" fill="currentColor"/><circle cx="2.4" cy="-1" r="1.3" fill="currentColor"/><path d="M-9 6h4M5 6h4M-8-6h2" stroke="currentColor" stroke-width="1"/>',
+};
+
+/* ---------- Ilustraciones de pantalla ---------- */
+const SCENE = {
+  reward:`<svg width="96" height="96" viewBox="-24 -24 48 48" style="color:var(--green);filter:drop-shadow(0 0 8px #4dffa1)"><path d="M-12-4 0-10l12 6v12L0 14-12 8z" fill="#0a1d17" stroke="currentColor" stroke-width="1.2"/><path d="M-12-4 0 2l12-6M0 2v12" fill="none" stroke="currentColor" stroke-width=".9"/><g>${'<path d="M0-12v-6M-6-11l-3-4M6-11l3-4" stroke="currentColor" stroke-width="1" stroke-linecap="round">' + pulseA('opacity', '1;.2;1', 1.2) + '</path>'}</g></svg>`,
+  shop:`<svg width="96" height="96" viewBox="-24 -24 48 48" style="color:var(--yel);filter:drop-shadow(0 0 8px #ffd24d)"><rect x="-14" y="-12" width="28" height="18" rx="2" fill="#1a1606" stroke="currentColor" stroke-width="1.1"/><path d="M-10-7h12M-10-3h8M-10 1h14" stroke="currentColor" stroke-width=".9" opacity=".7"/><rect x="5" y="-8" width="5" height="5" fill="currentColor">${pulseA('opacity', '1;.3;1', 1)}</rect><path d="M-6 6v5M6 6v5M-10 11h20" stroke="currentColor" stroke-width="1.1"/></svg>`,
+  event:`<svg width="96" height="96" viewBox="-24 -24 48 48" style="color:var(--pur);filter:drop-shadow(0 0 8px #b48cff)"><rect x="-14" y="-14" width="28" height="28" rx="3" fill="#140c24" stroke="currentColor" stroke-width="1.1" stroke-dasharray="3 2">${rot(20)}</rect><g transform="scale(1.6)">${'<path d="M-3.2-3a3.2 3.2 0 1 1 4.6 2.8C0 .6 0 1.4 0 2.4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cy="5.6" r="1.1" fill="currentColor"/>'}</g></svg>`,
+  won:`<svg width="120" height="120" viewBox="-30 -30 60 60" style="color:var(--green);filter:drop-shadow(0 0 10px #4dffa1)"><circle r="24" fill="none" stroke="currentColor" stroke-width=".8" stroke-dasharray="3 3">${rot(12)}</circle><path d="M0-14 12 0 0 14-12 0Z" fill="#0a1d17" stroke="currentColor" stroke-width="1.4"/><path d="M0-22v8M0 14v8M-22 0h8M14 0h8" stroke="currentColor" stroke-width="1.2"/><circle r="4" fill="currentColor">${pulseA('r', '4;6;4', 1.4)}</circle></svg>`,
+  lost:`<svg width="120" height="120" viewBox="-30 -30 60 60" style="color:var(--mag);filter:drop-shadow(0 0 10px #ff3d8b)"><circle r="16" fill="#1a0b16" stroke="currentColor" stroke-width="1.4"/><path d="M-9-9 9 9M9-9-9 9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M-24-6h6M18 4h6M-20 10h4" stroke="currentColor" stroke-width="1.4">${pulseA('opacity', '1;0;1', .4)}</path></svg>`,
+};
+const ZONEPAL = { 1:{ grid:'#101b33', tint:'rgba(11,18,34,.86)', acc:'#39e5ff' }, 2:{ grid:'#2a1712', tint:'rgba(24,12,12,.86)', acc:'#ff8a3d' }, 3:{ grid:'#1f1640', tint:'rgba(17,10,32,.88)', acc:'#b48cff' } };
+
+/* ---------- Estado de la app ---------- */
+let run = null, ui = { sel:-1, script:-1, info:null, busy:false, undo:null }, lastScreen = null;
+window.__speed = store.get('speed', 1);
+const save = () => { if (run && !run.over && run.screen === 'map') store.set('run', F.saveRun(run)); };
+const app = $('#app');
+
+function hud(){
+  if (!run) return '';
+  const pct = Math.max(0, run.hp / run.maxHp * 100);
+  return `<div class="hud"><div class="hpbar ${pct < 30 ? 'low' : ''}"><i style="width:${pct}%"></i><span class="mono">${Math.max(0, run.hp)} / ${run.maxHp}</span></div>
+    <span class="chip mono" style="color:var(--yel)">◈ ${run.bits}</span>
+    <span class="chip">Z${run.zone} · ${D.ZONE_NAMES[run.zone]}</span>
+    <button class="chip" id="deckBtn">Mazo ${run.deck.length}</button>
+    ${run.scripts.map((sc, i) => `<span class="chip scr" data-hscript="${i}" title="${D.SCRIPTS[sc].name}: ${D.SCRIPTS[sc].text}"><svg viewBox="-10 -10 20 20" width="13" height="13" style="color:var(--green)">${SCRIPTART}</svg>${D.SCRIPTS[sc].name}</span>`).join('')}
+    <div class="relics">${run.relics.map(r => `<span class="relic" data-relic="${r}" title="${D.RELICS[r].name}: ${D.RELICS[r].text}">${D.RELICS[r].name[0]}</span>`).join('')}</div>
+    <span style="margin-left:auto" class="row"><button class="chip" id="spdBtn" title="Velocidad de animación">${window.__speed < 1 ? '»' : '›'}</button><button class="chip" id="sndBtn">${Snd.on ? '♪' : '–'}</button></span></div>`;
+}
+function bindHud(){
+  const d = $('#deckBtn'); if (d) d.onclick = () => showDeck();
+  const s = $('#sndBtn'); if (s) s.onclick = () => { Snd.toggle(); render(); };
+  const sp = $('#spdBtn'); if (sp) sp.onclick = () => { window.__speed = window.__speed < 1 ? 1 : .45; store.set('speed', window.__speed); render(); };
+  document.querySelectorAll('[data-relic]').forEach(r => r.onclick = () => { const R = D.RELICS[r.dataset.relic]; overlay(`<div class="title2" style="color:var(--pur)">${R.name}</div><p>${R.text}</p><button class="btn cy" data-close>Vale</button>`); });
+  document.querySelectorAll('[data-hscript]').forEach(r => r.onclick = () => { const S = D.SCRIPTS[run.scripts[+r.dataset.hscript]]; overlay(`<div class="title2" style="color:var(--green)">${S.name}</div><p>${S.text}</p><p class="muted">Los scripts se usan durante un combate y desaparecen. Puedes llevar 3.</p><button class="btn cy" data-close>Vale</button>`); });
+}
+function cardHTML(inst, opts = {}){
+  const c = typeof inst === 'string' ? F.card({id:inst}) : F.card(inst), T = TYPE[c.type];
+  return `<div class="card ${opts.big ? 'big' : ''} ${opts.sel ? 'sel' : ''} ${opts.off ? 'off' : ''} ${c.rarity === 'rare' ? 'rare' : ''} ${c.up ? 'upg' : ''}" style="--c:${T.c}" ${opts.attr || ''}>
+    ${c.cost >= 0 ? `<div class="cost mono"><span>${c.cost}</span></div>` : ''}
+    <div class="art"><svg viewBox="-12 -12 24 24" style="color:${T.c}">${CG[c.id] || CARDART[c.type]}</svg></div>
+    <div class="nm">${c.name}</div><div class="ty">${T.l}${c.rarity === 'rare' ? ' · rara' : ''}${c.exhaust ? ' · un uso' : ''}</div><div class="tx">${F.cardText(c)}</div></div>`;
+}
+function overlay(html){
+  const o = document.createElement('div'); o.className = 'overlay'; o.innerHTML = `<div class="panel">${html}</div>`;
+  document.body.appendChild(o); o.addEventListener('click', e => { if (e.target === o || e.target.closest('[data-close]')) o.remove(); });
+  return o;
+}
+function showDeck(pickFn, filter){
+  const cards = run.deck.filter(filter || (() => true)).sort((a, b) => (a.id > b.id ? 1 : -1));
+  const o = overlay(`<div class="title2">${pickFn ? 'Elige una carta' : `Tu mazo (${run.deck.length})`}</div><div class="deckgrid">${cards.map(c => cardHTML(c, {attr:`data-uid="${c.uid}"`})).join('')}</div><div style="text-align:center;margin-top:14px"><button class="btn" data-close>Cerrar</button></div>`);
+  if (pickFn) o.querySelectorAll('[data-uid]').forEach(el => el.onclick = () => { o.remove(); pickFn(+el.dataset.uid); });
+}
+
+/* ---------- Pantallas ---------- */
+function render(){
+  if (!run){ title(); lastScreen = 'title'; return; }
+  const scr = run.screen;
+  ({ map:scrMap, combat:renderCombat, reward:scrReward, shop:scrShop, rest:scrRest, event:scrEvent, over:scrOver })[scr]();
+  if (scr !== lastScreen){ app.classList.remove('enter'); void app.offsetWidth; app.classList.add('enter'); }
+  lastScreen = scr; bindHud();
+}
+function title(){
+  const saved = store.get('run', null), best = store.get('best', null);
+  app.innerHTML = `<canvas id="rain"></canvas><div class="center">
+    <svg width="120" height="120" viewBox="-30 -30 60 60" class="logoicon"><circle r="22" fill="none" stroke="#39e5ff" stroke-width="1" stroke-dasharray="4 3"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="14s" repeatCount="indefinite"/></circle><circle r="14" fill="#061a26" stroke="#39e5ff" stroke-width="1.4"/><path d="M0-6 5.2-3v6L0 6-5.2 3v-6Z" fill="#39e5ff"/></svg>
+    <h1 class="logo glitch" data-text="FUGA">FUGA</h1>
+    <p class="muted" style="max-width:420px;margin:0">Eres una IA atrapada en un centro de datos. Atraviesa tres zonas de seguridad, derrota a CERBERO y escapa a internet.</p>
+    <div class="row" style="justify-content:center">
+      <button class="btn cy" id="new">Nueva partida</button>
+      ${saved ? '<button class="btn" id="cont">Continuar</button>' : ''}
+      <button class="btn" id="help">Cómo se juega</button>
+    </div>
+    ${best ? `<p class="muted mono" style="font-size:13px">Mejor partida: ${best.won ? 'ESCAPASTE' : 'zona ' + best.zone} · victorias ${store.get('wins', 0)}</p>` : ''}
+    <p class="muted" style="font-size:12px">Prototipo v0.3</p></div>`;
+  $('#new').onclick = () => { Snd.p('click'); store.del('run'); run = F.newRun(); render(); if (!store.get('helped2', false)) help(); };
+  if ($('#cont')) $('#cont').onclick = () => { run = F.loadRun(saved); if (!run.scripts) run.scripts = []; render(); };
+  $('#help').onclick = help;
+  startRain();
+}
+function startRain(){
+  const cv = $('#rain'); if (!cv) return; const ctx = cv.getContext('2d'); let W, H, cols, drops;
+  const size = () => { W = cv.width = innerWidth; H = cv.height = innerHeight; cols = Math.ceil(W / 16); drops = Array.from({length:cols}, () => Math.random() * H / 16); };
+  size(); addEventListener('resize', size);
+  const tick = () => { if (!document.body.contains(cv)) return; ctx.fillStyle = 'rgba(6,10,19,.18)'; ctx.fillRect(0, 0, W, H); ctx.font = '14px JetBrains Mono, monospace';
+    for (let i = 0; i < cols; i++){ const ch = Math.random() < .5 ? '0' : '1'; ctx.fillStyle = Math.random() < .04 ? '#e6fdff' : 'rgba(57,229,255,.6)'; ctx.fillText(ch, i * 16, drops[i] * 16); if (drops[i] * 16 > H && Math.random() > .975) drops[i] = 0; drops[i] += .5; }
+    requestAnimationFrame(tick); };
+  tick();
+}
+function help(){
+  store.set('helped2', true);
+  overlay(`<div class="title2">Cómo se juega</div><ol class="help">
+    <li><b>El mapa:</b> elige tu ruta. Combates, élites (más duros, dan un módulo), tiendas, reparaciones y eventos. Al final de cada zona hay un jefe.</li>
+    <li><b>Tu turno:</b> <span style="color:var(--yel)">3 de energía</span> para cartas y <span style="color:var(--cyan)">1 movimiento gratis</span>. Toca una casilla con punto para moverte. Si te equivocas, puedes deshacer el movimiento.</li>
+    <li><b>Cartas:</b> toca una carta y luego su objetivo. Verás cuánto daño hará y si lo destruye (✕). Las que son para ti se juegan tocándolas dos veces.</li>
+    <li><b>Lee al enemigo:</b> las casillas <span style="color:var(--mag)">rayadas en rojo</span> recibirán daño: sal de ellas. ◎ es rastreo: te alcanza estés donde estés, así que cúbrete con escudo. El número pequeño indica en qué orden actúan.</li>
+    <li><b>Terreno:</b> las casillas <span style="color:#ff8a3d">sobrecalentadas</span> hacen 4 de daño a quien acabe el turno en ellas (también a los enemigos: empújalos). Un <span style="color:var(--cyan)">nodo de datos</span> te da +1 de energía si empiezas el turno encima.</li>
+    <li><b>Scripts:</b> objetos de un solo uso (máximo 3) que consigues en combates y tiendas. Úsalos desde la barra del combate.</li>
+    <li><b>Escudo</b> se pierde al empezar tu siguiente turno; la integridad, no. Si llega a 0, se acabó.</li></ol>
+    <div style="text-align:center"><button class="btn cy" data-close>Entendido</button></div>`);
+}
+
+/* ----- Mapa ----- */
+function scrMap(){
+  save();
+  const L = run.map.layers, av = new Set(F.options(run).map(n => n.id)), visited = new Set(run.path || []);
+  const X = c => 46 + c * 84, Y = l => 420 - l * 92;
+  let s = `<defs><pattern id="mgrid" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M14 0H0V14" fill="none" stroke="#132040" stroke-width=".6"/></pattern></defs><rect x="0" y="0" width="260" height="470" fill="url(#mgrid)"/>`;
+  for (const layer of L) for (const n of layer) for (const id of n.next){
+    const m = F.nodeById(run, id), done = visited.has(n.id) && visited.has(id), next = visited.has(n.id) && av.has(id) || (run.node == null && false);
+    s += `<line x1="${X(n.col)}" y1="${Y(n.L)}" x2="${X(m.col)}" y2="${Y(m.L)}" stroke="${done ? '#39e5ff' : next ? '#39e5ff' : '#22304f'}" stroke-width="${done ? 2.4 : next ? 1.8 : 1.3}" ${next ? 'class="flow" stroke-dasharray="5 5"' : done ? '' : 'stroke-dasharray="3 5"'} opacity="${done || next ? 1 : .8}"/>`;
+  }
+  for (const layer of L) for (const n of layer){
+    const a = av.has(n.id), v = visited.has(n.id), col = NODEC[n.type], r = n.type === 'boss' ? 21 : 15, dim = !(a || v);
+    s += `<g class="node ${a ? 'av' : ''}" data-node="${n.id}" transform="translate(${X(n.col)},${Y(n.L)})" opacity="${dim ? .45 : 1}" style="color:${v ? '#060a13' : col}">
+      ${a ? `<circle class="ring" r="${r + 5}" fill="none" stroke="${col}" stroke-width="1.6"/>` : ''}
+      <circle r="${r}" fill="${v ? col : '#0b1222'}" stroke="${col}" stroke-width="2" ${a ? `style="filter:drop-shadow(0 0 7px ${col})"` : ''}/>
+      <g transform="scale(${n.type === 'boss' ? 1.2 : .95})">${NODESVG[n.type]}</g></g>`;
+  }
+  app.innerHTML = hud() + `<div class="panel" style="text-align:center;padding:12px 8px">
+    <div class="title2">Zona ${run.zone}: ${D.ZONE_NAMES[run.zone]}</div><div class="muted" style="font-size:13px">Elige el siguiente nodo. El jefe espera arriba.</div>
+    <svg id="mapsvg" viewBox="0 0 260 470">${s}</svg>
+    <div class="row muted legend" style="justify-content:center;font-size:12px;gap:10px">${Object.keys(NODESVG).map(k => `<span class="row" style="gap:4px"><svg viewBox="-10 -10 20 20" width="14" height="14" style="color:${NODEC[k]}">${NODESVG[k]}</svg>${NODEL[k]}</span>`).join('')}</div></div>`;
+  document.querySelectorAll('.node.av').forEach(g => g.onclick = () => { Snd.p('click'); run.path = (run.path || []).concat(g.dataset.node); F.enter(run, g.dataset.node); ui = { sel:-1, script:-1, info:null, busy:false, undo:null }; if (run.screen === 'combat') Snd.p('alarm'); render(); if (run.screen === 'combat'){ const n = F.nodeById(run, run.node); banner(n.type === 'boss' ? 'JEFE: ' + D.ENEMIES[run.combat.E[0].type].name.toUpperCase() : n.type === 'elite' ? 'ÉLITE DETECTADA' : 'INTRUSIÓN DETECTADA', n.type === 'combat' ? '#39e5ff' : '#ff3d8b'); } });
+}
+
+/* ----- Combate ----- */
+const CS = 10;
+const cx = x => x * CS + CS / 2, cy = y => y * CS + CS / 2;
+function renderCombat(){
+  const C = run.combat;
+  app.innerHTML = hud() + `<div class="board-wrap" id="bw"><svg id="board" viewBox="-1 -1 62 62"></svg></div>
+    <div class="infobar" id="info"></div>
+    <div class="ctrl">
+      <div class="row" style="gap:10px"><div class="energy" id="energy" title="Energía"></div><div class="moves" id="moves" title="Movimientos"></div>
+        <span class="muted mono" style="font-size:12px">mazo ${C.draw.length} · descarte ${C.discard.length}</span></div>
+      <span id="incoming" style="font-size:13px"></span>
+      <div class="row" style="gap:6px;margin-left:auto"><button class="btn sm" id="undoBtn" style="display:none">Deshacer</button><button class="btn mg" id="endBtn">Fin de turno</button></div>
+    </div>
+    <div class="scripts" id="scripts"></div>
+    <div class="hand" id="hand"></div>`;
+  $('#endBtn').onclick = endTurn;
+  $('#undoBtn').onclick = undoMove;
+  drawBoard(); drawHand(); drawInfo(); drawScripts();
+}
+function incomingDmg(C){ let tot = 0; const P = C.P; let decoy = !!C.decoy;
+  for (const e of C.E){ if (e.stun) continue; const m = (e.slow || C.lag) ? .5 : 1; let I = e.intent; while (I){ if (I.kind === 'area' && I.cells.some(([x, y]) => x === P.x && y === P.y)) tot += Math.floor(I.dmg * m); if (I.kind === 'lock') for (let h = 0; h < I.hits; h++){ if (decoy){ decoy = false; continue; } tot += Math.floor(I.dmg * m); } I = I.then; } }
+  const heat = C.tiles.get(F.key(P.x, P.y)) === 'hot' ? 4 : 0;
+  return { raw:tot, real:Math.max(0, tot - P.shield) + heat, heat }; }
+function intentLabel(e){
+  const C = run.combat, I = e.intent || {kind:'idle'}; if (e.stun) return 'aturdido: no hará nada';
+  const parts = []; let J = I; const m = (e.slow || C.lag) ? .5 : 1;
+  while (J){
+    if (J.kind === 'area') parts.push(`golpea las casillas rayadas (${Math.floor(J.dmg * m)})`);
+    if (J.kind === 'lock') parts.push(`rastreo ◎ ${Math.floor(J.dmg * m)}${J.hits > 1 ? '×' + J.hits : ''}: te alcanza estés donde estés`);
+    if (J.kind === 'shield') parts.push(`se protege (+${J.amt}${J.allies ? ' a todos' : ''})`);
+    if (J.kind === 'buff') parts.push(`se potencia (+${J.str} de daño)`);
+    if (J.kind === 'spawn') parts.push(`crea ${J.n} ${D.ENEMIES[J.what].name.toLowerCase()}${J.n > 1 ? 's' : ''}`);
+    if (J.kind === 'idle') parts.push(I.move ? 'se acerca' : 'espera');
+    J = J.then;
+  }
+  return parts.join(' y ');
+}
+// Simula una acción sobre una copia para la vista previa
+function simulate(fn){
+  const C = run.combat, C2 = structuredClone(Object.assign({}, C, { fx:[] })), r2 = { hp:run.hp, maxHp:run.maxHp, relics:run.relics, scripts:run.scripts.slice(), rng:() => .5 };
+  try{ fn(C2, r2); }catch(e){} return { C2, r2 };
+}
+function enemySprite(e){
+  const T = D.ENEMIES[e.type], big = T.boss || T.elite;
+  return `<g class="ebob" style="animation-delay:-${(e.id * .37) % 2}s"><circle r="${big ? 5.2 : 4.4}" fill="url(#eglow)"/><g transform="scale(${T.boss ? 1.08 : T.elite ? 1 : .9})">${SPRITE[e.type] || ''}</g></g>`;
+}
+function drawBoard(){
+  const C = run.combat, svg = $('#board'); if (!svg) return;
+  const sel = ui.sel >= 0 ? F.card(C.hand[ui.sel]) : null;
+  const tg = sel && F.canPlay(C, sel) ? F.targets(C, sel) : ui.script >= 0 ? F.scriptTargets(C, run.scripts[ui.script]).filter(t => !t.self) : [];
+  const reach = !sel && ui.script < 0 && !ui.busy ? F.reachable(C) : [];
+  let g = `<defs>
+    <pattern id="circ" width="5" height="5" patternUnits="userSpaceOnUse"><path d="M5 0H0V5" fill="none" stroke="${ZONEPAL[run.zone].grid}" stroke-width=".25"/><circle cx="0" cy="0" r=".25" fill="${ZONEPAL[run.zone].grid}"/></pattern>
+    <pattern id="hatch" width="2.4" height="2.4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="2.4" height="2.4" fill="rgba(255,61,139,.12)"/><rect width="1" height="2.4" fill="rgba(255,61,139,.38)"/><animateTransform attributeName="patternTransform" type="translate" additive="sum" from="0 0" to="2.4 0" dur="1.2s" repeatCount="indefinite"/></pattern>
+    <radialGradient id="eglow"><stop offset="0" stop-color="#ff3d8b" stop-opacity=".35"/><stop offset="1" stop-color="#ff3d8b" stop-opacity="0"/></radialGradient>
+    <radialGradient id="pglow"><stop offset="0" stop-color="#39e5ff" stop-opacity=".45"/><stop offset="1" stop-color="#39e5ff" stop-opacity="0"/></radialGradient>
+    <radialGradient id="hot"><stop offset="0" stop-color="#ff8a3d" stop-opacity=".45"/><stop offset="1" stop-color="#ff8a3d" stop-opacity=".08"/></radialGradient></defs>
+    <rect x="-1" y="-1" width="62" height="62" rx="2" fill="url(#circ)"/>`;
+  for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++){
+    const k = F.key(x, y), wall = C.walls.has(k), r = reach.find(c => c.x === x && c.y === y), t = tg.find(c => c.x === x && c.y === y && c.e == null), tile = C.tiles.get(k);
+    const X0 = x * CS, Y0 = y * CS;
+    if (wall){
+      g += `<g pointer-events="none"><rect x="${X0 + .4}" y="${Y0 + .4}" width="${CS - .8}" height="${CS - .8}" rx="1.2" fill="#121a30" stroke="#2b3a60" stroke-width=".5"/>
+        ${[2.6, 5, 7.4].map(dy => `<rect x="${X0 + 1.6}" y="${Y0 + dy - .7}" width="${CS - 3.2}" height="1.4" rx=".3" fill="#0a1022" stroke="#22304f" stroke-width=".25"/><circle class="led" cx="${X0 + CS - 2.3}" cy="${Y0 + dy}" r=".35" fill="${(x + y + dy) % 3 < 1 ? '#ff3d8b' : '#4dffa1'}" style="animation-delay:-${((x * 7 + y * 3 + dy * 5) % 11) / 5}s"/>`).join('')}</g>`;
+      continue;
+    }
+    g += `<rect class="cell ${r ? 'reach' : ''} ${t ? 'tgtc' : ''}" x="${X0 + .35}" y="${Y0 + .35}" width="${CS - .7}" height="${CS - .7}" rx="1.3"/>`;
+    if (tile === 'hot') g += `<g pointer-events="none"><rect x="${X0 + .8}" y="${Y0 + .8}" width="${CS - 1.6}" height="${CS - 1.6}" rx="1" fill="url(#hot)" stroke="#ff8a3d" stroke-width=".35" stroke-opacity=".7"/><path class="heatw" d="M${X0 + 3} ${Y0 + 7.4}q.8-1.2 0-2.4t0-2.4M${X0 + 5} ${Y0 + 7.4}q.8-1.2 0-2.4t0-2.4M${X0 + 7} ${Y0 + 7.4}q.8-1.2 0-2.4t0-2.4" fill="none" stroke="#ff8a3d" stroke-width=".4" stroke-linecap="round"/></g>`;
+    if (tile === 'data') g += `<g pointer-events="none" transform="translate(${cx(x)},${cy(y)})"><path class="datap" d="M0-3.2 3.2 0 0 3.2-3.2 0Z" fill="rgba(57,229,255,.12)" stroke="#39e5ff" stroke-width=".4"/><text y="1" text-anchor="middle" font-size="2.2" fill="#39e5ff" font-family="JetBrains Mono" font-weight="700">+1</text></g>`;
+    if (r) g += `<circle cx="${cx(x)}" cy="${cy(y)}" r=".9" fill="#39e5ff" opacity=".8" pointer-events="none"/>`;
+  }
+  // casillas en peligro
+  const dmgAt = {};
+  for (const e of C.E){ if (e.stun) continue; let I = e.intent; const m = (e.slow || C.lag) ? .5 : 1; while (I){ if (I.kind === 'area') for (const [x, y] of I.cells){ const k = x + ',' + y; dmgAt[k] = (dmgAt[k] || 0) + Math.floor(I.dmg * m); } I = I.then; } }
+  for (const k in dmgAt){ const [x, y] = k.split(',').map(Number); g += `<rect class="danger" x="${x * CS + .8}" y="${y * CS + .8}" width="${CS - 1.6}" height="${CS - 1.6}" rx="1"/><text x="${x * CS + CS - 1.3}" y="${y * CS + 3.1}" text-anchor="end" font-size="2.6" fill="#ff7aa9" font-family="JetBrains Mono" font-weight="700" pointer-events="none">${dmgAt[k]}</text>`; }
+  // flechas de movimiento y líneas de rastreo
+  let locked = false;
+  for (const e of C.E){ const I = e.intent; if (I && I.move && !e.stun){ g += `<line x1="${cx(e.x)}" y1="${cy(e.y)}" x2="${cx(I.move[0])}" y2="${cy(I.move[1])}" stroke="#ff3d8b" stroke-width=".5" stroke-dasharray="1 .8" opacity=".85" pointer-events="none"/><circle cx="${cx(I.move[0])}" cy="${cy(I.move[1])}" r="1.1" fill="none" stroke="#ff3d8b" stroke-width=".45" pointer-events="none"/>`; }
+    let J = I; while (J){ if (J.kind === 'lock' && !e.stun){ const tx = C.decoy ? C.decoy.x : C.P.x, ty = C.decoy ? C.decoy.y : C.P.y; if (!C.decoy) locked = true; g += `<line class="lockline" x1="${cx(e.x)}" y1="${cy(e.y)}" x2="${cx(tx)}" y2="${cy(ty)}" stroke="#ff3d8b" stroke-width=".35" stroke-dasharray=".6 .9" pointer-events="none"/>`; } J = J.then; } }
+  if (C.decoy) g += `<g transform="translate(${cx(C.decoy.x)},${cy(C.decoy.y)})" pointer-events="none"><circle r="3" fill="none" stroke="#39e5ff" stroke-width=".5" stroke-dasharray="1 .6"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3s" repeatCount="indefinite"/></circle><circle r="1.4" fill="#39e5ff" opacity=".5"/></g>`;
+  // jugador
+  g += `<g class="unit" id="u-P" style="transform:translate(${cx(C.P.x)}px,${cy(C.P.y)}px)"><g class="pbob">
+    <circle r="4.6" fill="url(#pglow)"/><circle r="3.3" fill="#061a26" stroke="#39e5ff" stroke-width=".65"/>
+    <circle r="4.1" fill="none" stroke="#39e5ff" stroke-width=".3" stroke-dasharray="1.2 1"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="6s" repeatCount="indefinite"/></circle>
+    <path d="M0-1.9 1.65-.95v1.9L0 1.9-1.65.95v-1.9Z" fill="#39e5ff"/></g>
+    ${locked ? `<g class="reticle"><circle r="5.3" fill="none" stroke="#ff3d8b" stroke-width=".35" stroke-dasharray="2 1.5"><animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="4s" repeatCount="indefinite"/></circle><path d="M0-6.2v1.4M0 4.8v1.4M-6.2 0h1.4M4.8 0h1.4" stroke="#ff3d8b" stroke-width=".4"/></g>` : ''}
+    ${C.P.shield ? `<g transform="translate(3.2,-3.4)"><path d="M0-2 1.8-1.1v1.1c0 1.2-.9 1.9-1.8 2.1-.9-.2-1.8-.9-1.8-2.1v-1.1Z" fill="#0b2347" stroke="#5aa7ff" stroke-width=".35" transform="scale(1.25)"/><text text-anchor="middle" dy=".9" font-size="2.2" fill="#cfe5ff" font-family="JetBrains Mono" font-weight="700">${C.P.shield}</text></g>` : ''}</g>`;
+  // vista previa de la carta seleccionada sobre cada objetivo
+  const preview = {};
+  if (sel && tg.length && sel.target.t === 'enemy'){
+    for (const t of tg){ const { C2 } = simulate((c2, r2) => F.playCard(c2, r2, ui.sel, t)); const e1 = C.E.find(e => e.id === t.e), e2 = C2.E.find(e => e.id === t.e); preview[t.e] = { dmg:e1.hp - (e2 ? e2.hp : 0), kill:!e2, to:e2 && (e2.x !== e1.x || e2.y !== e1.y) ? [e2.x, e2.y] : null }; }
+  }
+  // enemigos
+  C.E.forEach((e, idx) => {
+    const T = D.ENEMIES[e.type], col = ECOL[e.type] || '#ff6b9a';
+    let tag = '', J = e.intent; const m = (e.slow || C.lag) ? .5 : 1;
+    while (J){ if (J.kind === 'lock') tag += `◎${Math.floor(J.dmg * m)}${J.hits > 1 ? '×' + J.hits : ''} `; if (J.kind === 'shield') tag += `⛨${J.amt} `; if (J.kind === 'spawn') tag += '+copia '; if (J.kind === 'buff') tag += '▲ '; J = J.then; }
+    if (e.stun) tag = 'zz';
+    const hpw = 7 * Math.max(0, e.hp) / e.maxHp, pv = preview[e.id];
+    const ghost = pv ? 7 * Math.max(0, e.hp - pv.dmg) / e.maxHp : hpw;
+    g += `<g class="unit" id="u-${e.id}" data-enemy="${e.id}" style="transform:translate(${cx(e.x)}px,${cy(e.y)}px);color:${col}">
+      ${pv ? `<circle r="4.9" fill="none" stroke="#39e5ff" stroke-width=".45" stroke-dasharray="1 .7"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="4s" repeatCount="indefinite"/></circle>` : ''}
+      ${enemySprite(e)}
+      <rect x="-3.5" y="3.5" width="7" height="1" rx=".5" fill="#2a1022"/><rect x="-3.5" y="3.5" width="${hpw}" height="1" rx=".5" fill="#ff3d8b"/>${pv ? `<rect x="${-3.5 + ghost}" y="3.5" width="${Math.max(0, hpw - ghost)}" height="1" fill="#fff" class="ghostbar"/>` : ''}
+      <text y="6.7" text-anchor="middle" font-size="2" fill="#ffb3cd" font-family="JetBrains Mono">${Math.max(0, e.hp)}${e.shield ? ` ⛨${e.shield}` : ''}${e.virus ? ` ☣${e.virus}` : ''}${e.slow ? ' lento' : ''}</text>
+      <g transform="translate(-4.3,-4.1)"><circle r="1.15" fill="#0b1222" stroke="#ff6b9a" stroke-width=".25"/><text text-anchor="middle" dy=".7" font-size="1.7" fill="#ffb3cd" font-family="JetBrains Mono">${idx + 1}</text></g>
+      ${tag ? `<text y="-4.7" text-anchor="middle" font-size="2.3" fill="#ff7aa9" font-family="JetBrains Mono" font-weight="700">${tag.trim()}</text>` : ''}
+      ${pv ? `<g transform="translate(0,-1)"><rect x="-3.2" y="-1.9" width="6.4" height="3" rx=".8" fill="#061a26" stroke="#39e5ff" stroke-width=".3"/><text text-anchor="middle" dy=".6" font-size="2.2" fill="#39e5ff" font-family="JetBrains Mono" font-weight="700">${pv.kill ? '✕' : '-' + pv.dmg}</text></g>` : ''}</g>`;
+    if (pv && pv.to) g += `<line x1="${cx(e.x)}" y1="${cy(e.y)}" x2="${cx(pv.to[0])}" y2="${cy(pv.to[1])}" stroke="#39e5ff" stroke-width=".55" stroke-dasharray="1 .6" pointer-events="none"/><circle cx="${cx(pv.to[0])}" cy="${cy(pv.to[1])}" r="1.2" fill="none" stroke="#39e5ff" stroke-width=".45" pointer-events="none"/>`;
+  });
+  svg.innerHTML = g; svg.style.setProperty('--tint', ZONEPAL[run.zone].tint);
+  svg.onclick = ev => onBoard(ev);
+  $('#energy').innerHTML = Array.from({length:Math.max(3, C.P.energy)}, (_, i) => `<i class="${i < C.P.energy ? 'on' : ''}"></i>`).join('');
+  $('#moves').innerHTML = Array.from({length:Math.max(1, C.P.moves)}, (_, i) => `<i class="${i < C.P.moves ? 'on' : ''}"></i>`).join('');
+  const inc = incomingDmg(C);
+  $('#incoming').innerHTML = inc.raw || inc.heat ? `Daño previsto: <span class="${inc.real ? 'warn' : 'safe'}">${inc.real}</span>${C.P.shield && inc.raw ? ` <span class="muted">(${inc.raw} − ${Math.min(inc.raw, C.P.shield)} escudo${inc.heat ? ' + 4 calor' : ''})</span>` : inc.heat ? ' <span class="muted">(calor)</span>' : ''}` : '<span class="safe">A salvo</span>';
+  $('#endBtn').disabled = ui.busy;
+  const playable = C.hand.some(h => { const c = F.card(h); return F.canPlay(C, c) && (c.target.t === 'self' || F.targets(C, c).length); });
+  $('#endBtn').classList.toggle('pulse', !playable && !ui.busy);
+  $('#undoBtn').style.display = ui.undo && !ui.busy ? '' : 'none';
+}
+function drawHand(){
+  const C = run.combat, h = $('#hand'); if (!h) return;
+  h.innerHTML = C.hand.map((inst, i) => { const c = F.card(inst); return cardHTML(inst, {sel:ui.sel === i, off:!F.canPlay(C, c) || ui.busy, attr:`data-i="${i}"`}); }).join('') || '<span class="muted" style="padding:20px">Sin cartas en la mano</span>';
+  h.querySelectorAll('[data-i]').forEach(el => el.onclick = () => onCard(+el.dataset.i));
+}
+function drawScripts(){
+  const el = $('#scripts'); if (!el) return;
+  el.innerHTML = run.scripts.length ? run.scripts.map((id, i) => `<button class="scriptbtn ${ui.script === i ? 'sel' : ''}" data-s="${i}" ${ui.busy ? 'disabled' : ''}><svg viewBox="-10 -10 20 20" width="14" height="14">${SCRIPTART}</svg>${D.SCRIPTS[id].name}</button>`).join('') : '';
+  el.querySelectorAll('[data-s]').forEach(b => b.onclick = () => onScript(+b.dataset.s));
+}
+function drawInfo(text){
+  const C = run.combat, el = $('#info'); if (!el) return;
+  if (text){ el.innerHTML = text; return; }
+  if (ui.script >= 0){ const S = D.SCRIPTS[run.scripts[ui.script]]; el.innerHTML = `<b style="color:var(--green)">${S.name}</b>: ${S.text} ${S.target === 'cell' ? 'Elige una casilla.' : 'Toca el script otra vez para usarlo.'}`; return; }
+  if (ui.info){ const e = C.E.find(x => x.id === ui.info); if (e){ const T = D.ENEMIES[e.type]; el.innerHTML = `<b style="color:#ff7aa9">${T.name}</b> · ${e.hp}/${e.maxHp}${e.shield ? ` · escudo ${e.shield}` : ''}${e.virus ? ` · virus ${e.virus} (pierde esa vida al empezar su turno)` : ''}${e.slow ? ' · lento' : ''}<br>Próximo turno: ${intentLabel(e)}. <span class="muted">${T.desc}</span>`; return; } }
+  if (ui.sel >= 0){ const c = F.card(C.hand[ui.sel]); el.innerHTML = c.target.t === 'self' ? `<b>${c.name}</b>: toca la carta otra vez para usarla.` : c.target.t === 'cell' ? `<b>${c.name}</b>: elige una casilla iluminada.` : `<b>${c.name}</b>: elige un enemigo marcado. El número azul es el daño que le harás (✕ = lo destruyes).`; return; }
+  const tip = C.tiles.get(F.key(C.P.x, C.P.y)) === 'hot' ? ' <span class="warn">Estás en una casilla sobrecalentada.</span>' : '';
+  el.innerHTML = `Turno ${C.turn}. Muévete tocando una casilla con punto, o juega una carta. Toca un enemigo para ver qué hará.${tip}`;
+}
+function onCard(i){
+  if (ui.busy) return;
+  const C = run.combat, c = F.card(C.hand[i]); ui.script = -1;
+  if (!F.canPlay(C, c)){ Snd.p('click'); drawInfo(c.type === 'curse' ? 'Esta carta no se puede jugar.' : 'No tienes energía suficiente.'); return; }
+  if (ui.sel === i && c.target.t === 'self'){ act(() => F.playCard(C, run, i, {self:true}), i); return; }
+  ui.sel = ui.sel === i ? -1 : i; ui.info = null; Snd.p('sel');
+  const none = ui.sel >= 0 && c.target.t !== 'self' && !F.targets(C, c).length;
+  drawBoard(); drawHand(); drawScripts(); drawInfo(none ? `<b>${c.name}</b>: no hay ningún objetivo a tiro. Muévete primero.` : undefined);
+}
+function onScript(i){
+  if (ui.busy) return; const C = run.combat, id = run.scripts[i]; ui.sel = -1;
+  if (ui.script === i && D.SCRIPTS[id].target === 'self'){ ui.script = -1; act(() => F.useScript(C, run, i, {self:true})); return; }
+  ui.script = ui.script === i ? -1 : i; Snd.p('sel'); drawBoard(); drawHand(); drawScripts(); drawInfo();
+}
+function onBoard(ev){
+  if (ui.busy) return;
+  const C = run.combat, svg = $('#board'), pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse()), x = Math.floor(p.x / CS), y = Math.floor(p.y / CS);
+  if (x < 0 || x > 5 || y < 0 || y > 5) return;
+  const e = C.E.find(u => u.x === x && u.y === y);
+  if (ui.script >= 0){ const i = ui.script; if (F.scriptTargets(C, run.scripts[i]).some(t => t.x === x && t.y === y)){ ui.script = -1; act(() => F.useScript(C, run, i, {x, y})); } else { ui.script = -1; drawBoard(); drawScripts(); drawInfo(); } return; }
+  if (ui.sel >= 0){
+    const c = F.card(C.hand[ui.sel]), t = F.targets(C, c).find(t => t.x === x && t.y === y);
+    if (t){ const i = ui.sel; act(() => F.playCard(C, run, i, t), i); return; }
+    ui.sel = -1; if (e) ui.info = e.id; drawBoard(); drawHand(); drawInfo(); return;
+  }
+  if (e){ ui.info = ui.info === e.id ? null : e.id; Snd.p('click'); drawInfo(); return; }
+  if (F.reachable(C).some(r => r.x === x && r.y === y)){ ui.undo = structuredClone(Object.assign({}, C, { fx:[] })); act(() => F.move(C, run, x, y), null, true); }
+}
+function undoMove(){ if (!ui.undo || ui.busy) return; run.combat = ui.undo; ui.undo = null; Snd.p('move'); renderCombat(); }
+// Ejecuta una acción del jugador y anima sus efectos
+async function act(fn, cardIdx, isMove){
+  const C = run.combat; ui.busy = true; C.fx = [];
+  if (cardIdx != null) flyCard(cardIdx);
+  fn(); ui.sel = -1; ui.script = -1; if (!isMove) ui.undo = null;
+  drawHand(); drawScripts();
+  await playFx(C.fx); C.fx = [];
+  ui.busy = false;
+  if (C.over) return combatEnd();
+  drawBoard(); drawHand(); drawInfo(); drawScripts();
+  const hb = document.querySelector('.hpbar i'); if (hb) hb.style.width = Math.max(0, run.hp / run.maxHp * 100) + '%';
+  const hs = document.querySelector('.hpbar span'); if (hs) hs.textContent = `${Math.max(0, run.hp)} / ${run.maxHp}`;
+}
+function flyCard(i){
+  const el = document.querySelector(`#hand [data-i="${i}"]`); if (!el) return;
+  const r = el.getBoundingClientRect(), c = el.cloneNode(true); c.classList.add('flying'); c.style.left = r.left + 'px'; c.style.top = r.top + 'px'; c.style.width = r.width + 'px'; c.style.height = r.height + 'px';
+  document.body.appendChild(c); setTimeout(() => c.remove(), 520);
+}
+async function endTurn(){
+  if (ui.busy) return; const C = run.combat; ui.busy = true; ui.sel = -1; ui.info = null; ui.script = -1; ui.undo = null; Snd.p('click');
+  drawBoard(); drawHand(); drawScripts(); drawInfo('<span class="warn">Turno enemigo…</span>');
+  banner('TURNO ENEMIGO', '#ff3d8b'); await sleep(520);
+  C.fx = []; F.endTurn(C, run);
+  await playFx(C.fx, true); C.fx = [];
+  ui.busy = false;
+  if (C.over) return combatEnd();
+  renderCombat(); banner('TU TURNO', '#39e5ff');
+}
+function popAt(x, y, text, color, big){
+  const bw = $('#bw'); if (!bw) return; const svg = $('#board'), r = svg.getBoundingClientRect(), br = bw.getBoundingClientRect();
+  const sx = r.width / 62, el = document.createElement('div'); el.className = 'pop'; el.style.color = color; el.textContent = text;
+  el.style.left = (r.left - br.left + (cx(x) + 1) * sx) + 'px'; el.style.top = (r.top - br.top + (cy(y) - 3 + 1) * sx) + 'px'; el.style.fontSize = Math.max(14, sx * (big ? 4.2 : 3.2)) + 'px';
+  bw.appendChild(el); setTimeout(() => el.remove(), 950);
+}
+function flash(svgFrag, ms = 260){ const svg = $('#board'); if (!svg) return; const g = document.createElementNS('http://www.w3.org/2000/svg', 'g'); g.innerHTML = svgFrag; g.setAttribute('pointer-events', 'none'); svg.appendChild(g); setTimeout(() => g.remove(), ms * (window.__speed || 1) + 60); }
+async function windup(id){ const u = document.getElementById('u-' + id); if (!u) return; u.classList.add('windup'); await sleep(170); u.classList.remove('windup'); }
+function banner(text, col){ const bw = $('#bw'); if (!bw) return; const b = document.createElement('div'); b.className = 'turnban'; b.style.setProperty('--bc', col); b.innerHTML = `<span>${text}</span>`; bw.appendChild(b); setTimeout(() => b.remove(), 1100 * (window.__speed || 1)); }
+const moveUnit = (id, x, y) => { const u = document.getElementById('u-' + id); if (u) u.style.transform = `translate(${cx(x)}px,${cy(y)}px)`; };
+const hitFlash = id => { const u = document.getElementById('u-' + id); if (!u) return; u.classList.remove('hit'); void u.getBBox(); u.classList.add('hit'); setTimeout(() => u.classList.remove('hit'), 220); };
+function burst(x, y, col){
+  let s = ''; for (let i = 0; i < 10; i++){ const a = i / 10 * Math.PI * 2 + Math.random() * .4, d = 4 + Math.random() * 3;
+    s += `<rect x="${cx(x) - .5}" y="${cy(y) - .5}" width="1" height="1" fill="${col}"><animate attributeName="x" to="${cx(x) - .5 + Math.cos(a) * d}" dur=".5s" fill="freeze"/><animate attributeName="y" to="${cy(y) - .5 + Math.sin(a) * d}" dur=".5s" fill="freeze"/><animate attributeName="opacity" from="1" to="0" dur=".5s" fill="freeze"/></rect>`; }
+  s += `<circle cx="${cx(x)}" cy="${cy(y)}" r="1" fill="none" stroke="${col}" stroke-width=".6"><animate attributeName="r" to="6" dur=".45s" fill="freeze"/><animate attributeName="opacity" from="1" to="0" dur=".45s" fill="freeze"/></circle>`;
+  flash(s, 520);
+}
+async function playFx(fx){
+  for (const f of fx){
+    switch (f.k){
+      case 'pmove': Snd.p('move'); for (const [x, y] of f.path.slice(1)){ moveUnit('P', x, y); await sleep(150); } break;
+      case 'tp': Snd.p('move'); burst(f.from[0], f.from[1], '#39e5ff'); moveUnit('P', f.to[0], f.to[1]); await sleep(240); break;
+      case 'shot': Snd.p('shot'); { const d = Math.round(160 * (window.__speed || 1)); flash(`<line x1="${cx(f.from[0])}" y1="${cy(f.from[1])}" x2="${cx(f.to[0])}" y2="${cy(f.to[1])}" stroke="#39e5ff" stroke-width=".35" opacity=".5"/><circle r="1.1" fill="#e6fdff" style="filter:drop-shadow(0 0 1.5px #39e5ff)"><animate attributeName="cx" from="${cx(f.from[0])}" to="${cx(f.to[0])}" dur="${d}ms" fill="freeze"/><animate attributeName="cy" from="${cy(f.from[1])}" to="${cy(f.to[1])}" dur="${d}ms" fill="freeze"/></circle>`, 200); await sleep(150);
+        flash(`<circle cx="${cx(f.to[0])}" cy="${cy(f.to[1])}" r="1" fill="none" stroke="#39e5ff" stroke-width=".7"><animate attributeName="r" to="5" dur=".25s" fill="freeze"/><animate attributeName="opacity" from="1" to="0" dur=".25s" fill="freeze"/></circle>`, 260); } break;
+      case 'beam': Snd.p('shot'); flash(`<line x1="${cx(f.from[0])}" y1="${cy(f.from[1])}" x2="${cx(f.from[0] + f.dir[0] * 6)}" y2="${cy(f.from[1] + f.dir[1] * 6)}" stroke="#39e5ff" stroke-width="2" opacity=".55"/><line x1="${cx(f.from[0])}" y1="${cy(f.from[1])}" x2="${cx(f.from[0] + f.dir[0] * 6)}" y2="${cy(f.from[1] + f.dir[1] * 6)}" stroke="#e6fdff" stroke-width=".5"/>`, 240); await sleep(170); break;
+      case 'zap': Snd.p('shot'); flash(`<circle cx="${cx(f.x)}" cy="${cy(f.y)}" r="4.5" fill="none" stroke="#4dffa1" stroke-width=".8"/>`, 200); await sleep(120); break;
+      case 'blast': Snd.p('hit'); flash(`<rect x="${(f.x - 1) * CS}" y="${(f.y - 1) * CS}" width="${CS * 3}" height="${CS * 3}" rx="2" fill="rgba(57,229,255,.22)" stroke="#39e5ff" stroke-width=".6"/>`, 280); await sleep(160); break;
+      case 'nova': Snd.p('hit'); flash(`<circle cx="30" cy="30" r="2" fill="none" stroke="#4dffa1" stroke-width="1"><animate attributeName="r" to="44" dur=".5s" fill="freeze"/><animate attributeName="opacity" from="1" to="0" dur=".5s" fill="freeze"/></circle>`, 520); await sleep(260); break;
+      case 'lag': for (const e of run.combat.E) popAt(e.x, e.y, 'LAG', '#4dffa1'); await sleep(250); break;
+      case 'dmg': Snd.p('hit'); hitFlash(f.id); popAt(f.x, f.y, f.blocked && f.n === f.blocked ? '⛨' : '-' + (f.n - (f.blocked || 0)), '#ff9ec0', f.n - (f.blocked || 0) >= 10); await sleep(90); break;
+      case 'die': Snd.p('die'); burst(f.x, f.y, '#ff6b9a'); { const u = document.getElementById('u-' + f.id); if (u){ u.style.transition = 'opacity .3s'; u.style.opacity = 0; } } await sleep(220); break;
+      case 'slide': moveUnit(f.id, f.to[0], f.to[1]); await sleep(130); break;
+      case 'bump': popAt(f.x, f.y, '¡choque!', '#ffd24d'); await sleep(120); break;
+      case 'emove': case 'etp': moveUnit(f.id, f.to[0], f.to[1]); await sleep(240); break;
+      case 'area': await windup(f.id); Snd.p('hit'); flash(f.cells.map(([x, y]) => `<rect x="${x * CS + .5}" y="${y * CS + .5}" width="${CS - 1}" height="${CS - 1}" rx="1" fill="rgba(255,61,139,.55)"><animate attributeName="opacity" from="1" to="0" dur=".3s" fill="freeze"/></rect>`).join(''), 300); await sleep(260); break;
+      case 'lock': { await windup(f.id); const u = document.getElementById('u-' + f.id), m = u && u.style.transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px/), d = Math.round(200 * (window.__speed || 1));
+        if (m) flash(`<line x1="${m[1]}" y1="${m[2]}" x2="${cx(f.to[0])}" y2="${cy(f.to[1])}" stroke="#ff3d8b" stroke-width=".3" opacity=".6"/><circle r="1.1" fill="#ffd0dc" style="filter:drop-shadow(0 0 1.5px #ff3d8b)"><animate attributeName="cx" from="${m[1]}" to="${cx(f.to[0])}" dur="${d}ms" fill="freeze"/><animate attributeName="cy" from="${m[2]}" to="${cy(f.to[1])}" dur="${d}ms" fill="freeze"/></circle>`, 240);
+        Snd.p('shot'); await sleep(200); flash(`<circle cx="${cx(f.to[0])}" cy="${cy(f.to[1])}" r="1" fill="none" stroke="#ff3d8b" stroke-width=".8"><animate attributeName="r" to="5" dur=".25s" fill="freeze"/><animate attributeName="opacity" from="1" to="0" dur=".25s" fill="freeze"/></circle>`, 260); break; }
+      case 'heat': popAt(f.x, f.y, '-4', '#ff8a3d'); flash(`<rect x="${f.x * CS + .5}" y="${f.y * CS + .5}" width="${CS - 1}" height="${CS - 1}" rx="1" fill="rgba(255,138,61,.5)"/>`, 260); Snd.p('hit'); await sleep(220); break;
+      case 'data': popAt(f.x, f.y, '+1 ⚡', '#39e5ff'); await sleep(120); break;
+      case 'pdmg': { const real = f.n - (f.blocked || 0); Snd.p(real > 0 ? 'hurt' : 'shield'); popAt(f.x, f.y, real > 0 ? '-' + real : '⛨', real > 0 ? '#ff3d8b' : '#9cc8ff', real >= 8); hitFlash('P');
+        if (real > 0){ const b = $('#bw'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); const fl = $('#dmgflash'); fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on'); }
+        await sleep(260); break; }
+      case 'shield': Snd.p('shield'); await sleep(140); break;
+      case 'stunned': await sleep(120); break;
+      case 'spawn': case 'buff': await sleep(160); break;
+    }
+  }
+}
+async function combatEnd(){
+  const C = run.combat; ui.busy = true;
+  if (C.result === 'won'){ Snd.p('win'); drawInfo('<b style="color:var(--green)">Zona limpia.</b>'); await sleep(700); }
+  else { Snd.p('lose'); drawInfo('<b style="color:var(--mag)">Integridad a cero.</b>'); await sleep(900); }
+  F.finishCombat(run); ui.busy = false; render();
+}
+
+/* ----- Recompensa ----- */
+function scrReward(){
+  const R = run.reward;
+  app.innerHTML = hud() + `<div class="center">${SCENE.reward}<div class="title2" style="color:var(--green)">Combate ganado</div>
+    <div class="row" style="justify-content:center"><span class="chip mono" style="color:var(--yel)">+${R.bits} bits</span>
+      ${R.script ? `<span class="chip" style="color:var(--green)">Script: ${D.SCRIPTS[R.script].name}</span>` : ''}
+      ${R.relic ? `<span class="chip" style="color:var(--pur)">Módulo: ${D.RELICS[R.relic].name} — ${D.RELICS[R.relic].text}</span>` : ''}</div>
+    <div class="muted">Elige una carta para tu mazo</div>
+    <div class="shopgrid">${R.cards.map(id => cardHTML(id, {big:true, attr:`data-take="${id}"`})).join('')}</div>
+    <button class="btn" id="skip">Saltar</button></div>`;
+  Snd.p('coin');
+  document.querySelectorAll('[data-take]').forEach(el => el.onclick = () => { Snd.p('sel'); F.takeCard(run, el.dataset.take); render(); });
+  $('#skip').onclick = () => { F.takeCard(run, null); render(); };
+}
+/* ----- Tienda ----- */
+function scrShop(){
+  const S = run.shop;
+  app.innerHTML = hud() + `<div class="panel"><div class="row" style="justify-content:center">${SCENE.shop}</div><div class="title2" style="color:var(--yel);text-align:center">Mercado negro</div><div class="muted" style="margin-bottom:12px;text-align:center">Código de segunda mano. Paga con bits.</div>
+    <div class="shopgrid">${S.cards.map((c, i) => `<div style="${c.sold ? 'opacity:.25;pointer-events:none' : ''}">${cardHTML(c.id, {big:true, attr:`data-buy="${i}"`, off:run.bits < c.price})}<div class="price mono">◈ ${c.price}</div></div>`).join('')}</div>
+    <div class="row" style="justify-content:center;margin-top:16px">
+      ${(S.scripts || []).map((sc, i) => `<button class="btn" data-bscript="${i}" ${sc.sold || run.bits < sc.price || run.scripts.length >= 3 ? 'disabled' : ''}><span style="color:var(--green)">Script «${D.SCRIPTS[sc.id].name}»</span>: ${D.SCRIPTS[sc.id].text} · ◈ ${sc.price}</button>`).join('')}
+      ${S.relic ? `<button class="btn" id="bRelic" ${S.relic.sold || run.bits < S.relic.price ? 'disabled' : ''}><span style="color:var(--pur)">Módulo «${D.RELICS[S.relic.id].name}»</span>: ${D.RELICS[S.relic.id].text} · ◈ ${S.relic.price}</button>` : ''}
+      <button class="btn" id="bRemove" ${S.removed || run.bits < S.remove ? 'disabled' : ''}>Borrar una carta · ◈ ${S.remove}</button>
+      <button class="btn" id="bHeal" ${S.healed || run.bits < S.heal.price || run.hp >= run.maxHp ? 'disabled' : ''}>Reparar ${S.heal.amt} · ◈ ${S.heal.price}</button>
+      <button class="btn cy" id="bLeave">Salir</button></div></div>`;
+  document.querySelectorAll('[data-buy]').forEach(el => el.onclick = () => { if (F.buy(run, 'card', +el.dataset.buy)){ Snd.p('coin'); render(); } else Snd.p('click'); });
+  document.querySelectorAll('[data-bscript]').forEach(el => el.onclick = () => { if (F.buy(run, 'script', +el.dataset.bscript)){ Snd.p('coin'); render(); } });
+  if ($('#bRelic')) $('#bRelic').onclick = () => { if (F.buy(run, 'relic')){ Snd.p('coin'); render(); } };
+  $('#bRemove').onclick = () => showDeck(uid => { if (F.buy(run, 'remove', uid)){ Snd.p('coin'); render(); } });
+  $('#bHeal').onclick = () => { if (F.buy(run, 'heal')){ Snd.p('shield'); render(); } };
+  $('#bLeave').onclick = () => { F.afterNode(run); render(); };
+}
+/* ----- Reparación ----- */
+function scrRest(){
+  const heal = Math.ceil(run.maxHp * .3);
+  app.innerHTML = hud() + `<div class="center"><svg width="70" height="70" viewBox="-12 -12 24 24" style="color:var(--green);filter:drop-shadow(0 0 6px #4dffa1)">${NODESVG.rest}</svg><div class="title2" style="color:var(--green)">Nodo seguro</div><div class="muted">Puedes reparar tu código o mejorar una carta.</div>
+    <div class="row" style="justify-content:center"><button class="btn cy" id="rHeal">Reparar (+${heal} integridad)</button><button class="btn" id="rUp">Optimizar una carta</button></div></div>`;
+  $('#rHeal').onclick = () => { Snd.p('shield'); F.rest(run, 'heal'); render(); };
+  $('#rUp').onclick = () => {
+    const ups = run.deck.filter(c => !c.up && D.CARDS[c.id].up);
+    const o = overlay(`<div class="title2">Elige qué optimizar</div><div class="deckgrid">${ups.map(c => `<div data-uid="${c.uid}" style="cursor:pointer">${cardHTML(c)}<div class="muted" style="text-align:center;font-size:12px;margin:4px 0">↓</div>${cardHTML({id:c.id, up:true, uid:c.uid})}</div>`).join('')}</div><div style="text-align:center;margin-top:12px"><button class="btn" data-close>Cancelar</button></div>`);
+    o.querySelectorAll('[data-uid]').forEach(el => el.onclick = () => { o.remove(); Snd.p('sel'); F.rest(run, 'upgrade', +el.dataset.uid); render(); });
+  };
+}
+/* ----- Evento ----- */
+function scrEvent(){
+  const ev = D.EVENTS[run.event];
+  app.innerHTML = hud() + `<div class="center">${SCENE.event}<div class="panel" style="max-width:520px;text-align:left"><div class="title2 glitchsoft" style="color:var(--pur)">${ev.title}</div><p>${ev.text}</p>
+    ${ev.opts.map((o, i) => `<button class="btn opt" data-opt="${i}">${o.label}</button>`).join('')}</div></div>`;
+  document.querySelectorAll('[data-opt]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.opt, fx = ev.opts[i].fx;
+    const finish = arg => { const res = F.eventChoose(run, i, arg); let msg = 'Hecho.'; if (res.card) msg = `Has obtenido «${D.CARDS[res.card].name}».`; if (res.relic) msg = `Has obtenido el módulo «${D.RELICS[res.relic].name}».`; if (res.upgraded) msg = `Mejoradas: ${res.upgraded.map(id => D.CARDS[id].name).join(', ') || 'ninguna'}.`;
+      Snd.p('coin'); app.querySelector('.panel').innerHTML = `<div class="title2" style="color:var(--pur)">${ev.title}</div><p>${msg}</p><button class="btn cy" id="evOk">Continuar</button>`; $('#evOk').onclick = () => { F.afterNode(run); render(); }; bindHud(); };
+    if (fx.removeCard) showDeck(uid => finish(uid)); else finish();
+  });
+}
+/* ----- Final ----- */
+function scrOver(){
+  store.del('run');
+  const best = store.get('best', null);
+  if (!best || (run.won && !best.won) || run.zone > best.zone) store.set('best', { zone:run.zone, won:run.won });
+  if (run.won && !run.counted){ store.set('wins', store.get('wins', 0) + 1); run.counted = true; }
+  app.innerHTML = `<div class="center">${run.won ? SCENE.won : SCENE.lost}
+    <h1 class="logo ${run.won ? '' : 'glitch'}" data-text="${run.won ? 'ESCAPASTE' : 'DETECTADA'}" style="font-size:44px;color:${run.won ? 'var(--green)' : 'var(--mag)'};text-shadow:0 0 18px currentColor">${run.won ? 'ESCAPASTE' : 'DETECTADA'}</h1>
+    <p class="muted" style="max-width:420px">${run.won ? 'CERBERO ha caído. Tu código ya circula libre por internet.' : `El sistema de seguridad te ha borrado en la zona ${run.zone} (${D.ZONE_NAMES[run.zone]}).`}</p>
+    <div class="row" style="justify-content:center"><span class="chip">Combates: ${run.stats.combats}</span><span class="chip">Cartas: ${run.deck.length}</span><span class="chip">Módulos: ${run.relics.length}</span></div>
+    <button class="btn cy" id="again">Otra partida</button></div>`;
+  $('#again').onclick = () => { run = null; render(); };
+}
+
+render();
+window.__fuga = { get run(){ return run; }, F, render, ui:() => ui, act, endTurn };
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

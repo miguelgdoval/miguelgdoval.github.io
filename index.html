@@ -71,6 +71,15 @@
       <span class="play" data-t="play"></span>
     </div>
   </a>
+  <a class="game" href="juegos/fuga/" style="margin-top:14px">
+    <img src="juegos/fuga/icons/og.png" alt="Fuga">
+    <div class="txt">
+      <h3>Fuga</h3><div class="sub" data-t="sub3"></div>
+      <p data-t="desc3"></p>
+      <div class="tags" data-t="tags3"></div>
+      <span class="play" data-t="play"></span>
+    </div>
+  </a>
   <div class="soon" data-t="soon"></div>
   <footer data-t="foot"></footer>
 </div>
@@ -78,10 +87,10 @@
 const T = {
   es:{ h1:'IA, automatización y juegos hechos con IA', lead:'Hago vídeos sobre cómo usar la IA para trabajar menos y crear más. Aquí dejo lo que voy construyendo, empezando por los juegos.',
     games:'Juegos', sub:'Trail · juego de mesa abstracto', desc:'Las fichas no son de nadie: mueves cualquiera, dejas tu huella y tienes que unir tus dos lados. Diseñado y equilibrado con bots que jugaron miles de partidas.',
-    tags:['Contra el bot o a dos', 'Tutorial y problemas', '5 temas', 'ES · EN · FR · DE', 'Funciona sin conexión'], sub2:'Bluff · los dos jugáis a la vez', desc2:'Elegís casilla en secreto y se revela a la vez. Si coincidís, se la queda quien tiene la corona. Gana con 5 en línea o 4 capturas: adivina dónde va el otro y no seas previsible.', tags2:['Contra el bot o a dos', 'Tutorial', '5 temas', 'ES · EN · FR · DE', 'Funciona sin conexión'], play:'Jugar ahora', soon:'Próximamente más juegos.', foot:'Hecho con IA, en Ferrol.' },
+    tags:['Contra el bot o a dos', 'Tutorial y problemas', '5 temas', 'ES · EN · FR · DE', 'Funciona sin conexión'], sub2:'Bluff · los dos jugáis a la vez', desc2:'Elegís casilla en secreto y se revela a la vez. Si coincidís, se la queda quien tiene la corona. Gana con 5 en línea o 4 capturas: adivina dónde va el otro y no seas previsible.', tags2:['Contra el bot o a dos', 'Tutorial', '5 temas', 'ES · EN · FR · DE', 'Funciona sin conexión'], sub3:'Roguelike de cartas y tablero', desc3:'Eres una IA atrapada en un centro de datos. Elige ruta, construye tu mazo, lee las intenciones de los enemigos y derrota a CERBERO para escapar a internet. Cada partida es distinta.', tags3:['Un jugador', 'Partidas de 15-20 min', '27 cartas', 'Se guarda la partida', 'Solo en español'], play:'Jugar ahora', soon:'Próximamente más juegos.', foot:'Hecho con IA, en Ferrol.' },
   en:{ h1:'AI, automation and games made with AI', lead:'I make videos about using AI to work less and build more. This is where I put what I build, starting with games.',
     games:'Games', sub:'Rastro · an abstract board game', desc:'Pieces belong to nobody: move any of them, leave your trail and connect your two sides. Designed and balanced with bots that played thousands of games.',
-    tags:['Vs bot or 2 players', 'Tutorial and puzzles', '5 themes', 'ES · EN · FR · DE', 'Works offline'], sub2:'Bluff · you both move at once', desc2:'Choose a cell in secret and reveal at once. Pick the same one and whoever holds the crown gets it. Win with 5 in a row or 4 captures: guess where the other goes, and don\'t be predictable.', tags2:['Vs bot or 2 players', 'Tutorial', '5 themes', 'ES · EN · FR · DE', 'Works offline'], play:'Play now', soon:'More games coming soon.', foot:'Made with AI, in Ferrol (Spain).' },
+    tags:['Vs bot or 2 players', 'Tutorial and puzzles', '5 themes', 'ES · EN · FR · DE', 'Works offline'], sub2:'Bluff · you both move at once', desc2:'Choose a cell in secret and reveal at once. Pick the same one and whoever holds the crown gets it. Win with 5 in a row or 4 captures: guess where the other goes, and don\'t be predictable.', tags2:['Vs bot or 2 players', 'Tutorial', '5 themes', 'ES · EN · FR · DE', 'Works offline'], sub3:'Card & board roguelike', desc3:'You are an AI trapped in a data centre. Pick your route, build your deck, read the enemies\' intents and defeat CERBERO to escape to the internet. Every run is different.', tags3:['Single player', '15-20 min runs', '27 cards', 'Auto-save', 'Spanish only for now'], play:'Play now', soon:'More games coming soon.', foot:'Made with AI, in Ferrol (Spain).' },
 };
 function set(l){
   let saved = l; try{ if (!saved) saved = localStorage.getItem('rastro.lang'); }catch(e){}
